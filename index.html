@@ -43,13 +43,23 @@
             text-align: center;
             z-index: 2;
             max-width: 600px;
-            margin-top: 50px;
+            margin-top: 30px;
             width: 100%;
+        }
+
+        /* Sığınak Başlığı */
+        .siginak-baslik {
+            font-size: 1.4rem;
+            color: #66fcf1;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            margin-bottom: 25px;
+            text-shadow: 0 0 8px rgba(102, 252, 241, 0.5);
         }
 
         /* Mum Alanı */
         .mum-alani {
-            margin-bottom: 30px;
+            margin-bottom: 25px;
         }
         .alev {
             width: 15px;
@@ -75,10 +85,10 @@
 
         /* Sayaç */
         #sayac {
-            font-size: 1.5rem;
+            font-size: 1.4rem;
             color: #66fcf1;
             text-shadow: 0 0 10px #66fcf1;
-            margin-bottom: 40px;
+            margin-bottom: 35px;
         }
 
         /* Sözler */
@@ -86,7 +96,7 @@
             font-style: italic;
             font-size: 1.1rem;
             line-height: 1.6;
-            margin-bottom: 40px;
+            margin-bottom: 35px;
             color: #969798;
         }
 
@@ -147,7 +157,7 @@
         .not-listesi {
             margin-top: 15px;
             text-align: left;
-            max-height: 150px;
+            max-height: 120px;
             overflow-y: auto;
             border-top: 1px dashed #45f3ff;
             padding-top: 10px;
@@ -159,6 +169,24 @@
             border-left: 3px solid #66fcf1;
             font-size: 0.9rem;
             word-wrap: break-word;
+        }
+
+        /* Boşver Butonu Tasarımı */
+        .bosver-buton {
+            background: #ff5100;
+            color: #fff;
+            box-shadow: 0 0 10px rgba(255, 81, 0, 0.3);
+        }
+        .bosver-buton:hover {
+            background: #ff9d00;
+            box-shadow: 0 0 15px #ff9d00;
+        }
+        #bosverMesaj {
+            margin-top: 10px;
+            font-size: 0.95rem;
+            color: #ff9d00;
+            min-height: 20px;
+            font-weight: bold;
         }
 
         /* Arama Alanı */
@@ -201,6 +229,9 @@
     <div class="ceryan-hatti sag-hat"></div>
 
     <div class="container">
+        <!-- Yeni Eklenen Başlığımız -->
+        <div class="siginak-baslik">Mustafa ve Tan'ın Sığınağı</div>
+
         <div class="mum-alani">
             <div class="alev"></div>
             <div class="mum-govde"></div>
@@ -218,6 +249,13 @@
             <textarea id="notGirdisi" class="not-textarea" placeholder="Sığınağa dürüst bir not bırak..."></textarea>
             <button onclick="notEkle()" class="genel-buton">Notu Kazı</button>
             <div id="notlar" class="not-listesi"></div>
+        </div>
+
+        <!-- Yenilenen Boşver Butonu Alanı -->
+        <div class="siginak-kutusu">
+            <h3>Zihin Temizliği</h3>
+            <button onclick="bosver()" class="genel-buton bosver-buton">BOŞVER</button>
+            <div id="bosverMesaj"></div>
         </div>
 
         <!-- DuckDuckGo Arama Kapısı -->
@@ -272,6 +310,20 @@
             
             document.getElementById("notGirdisi").value = "";
             notlariYukle();
+        }
+
+        // Boşver Butonu Fonksiyonu
+        const mesajlar = [
+            "Akışına bırak Mustafa, her şey geçici.",
+            "Bu saniyeden sonrası yeni bir başlangıç, gerisini boşver.",
+            "Ceryan akıyor, mum yanıyor, gürültüyü dışarıda bırak.",
+            "Burası bizim alanımız. Sadece nefes al ve boşver.",
+            "Zihnini serbest bırak dostum, yükleri burada bırakıyoruz."
+        ];
+
+        function bosver() {
+            const rastgele = mesajlar[Math.floor(Math.random() * mesajlar.length)];
+            document.getElementById("bosverMesaj").innerText = rastgele;
         }
 
         window.onload = function() {
