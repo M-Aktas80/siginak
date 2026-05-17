@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <title>Mustafa ve Tan'ın Sığınağı</title>
+    <style>
+        body {
+            background-color: #050505; /* Daha derin bir siyah */
+            color: #f1c40f;
+            margin: 0;
+            overflow: hidden; /* Kaydırma çubuğunu gizler, ceryan her yeri sarsın */
+            font-family: 'Courier New', Courier, monospace;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        /* Arka plandaki ceryan akışı için tuval */
+        canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: -1; /* Yazıların arkasında kalsın */
+        }
+
+        .container {
+            border: 1px solid #333;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 0 50px rgba(0, 255, 255, 0.1); /* Hafif elektrik mavisi gölge */
+            background: rgba(10, 10, 10, 0.85); /* Arkadaki akım hafifçe görünsün */
+            backdrop-filter: blur(5px);
+            text-align: center;
+            z-index: 1;
+        }
+
+        .flame {
+            font-size: 60px;
+            margin-bottom: 20px;
+            animation: pulse 2s infinite alternate;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); filter: drop-shadow(0 0 5px #f1c40f); }
+            100% { transform: scale(1.1); filter: drop-shadow(0 0 15px #f1c40f); }
+        }
+
+        h1 { font-size: 2.2em; margin-bottom: 5px; text-shadow: 0 0 10px rgba(241, 196, 15, 0.5); }
+        .motto { font-style: italic; color: #888; margin-bottom: 30px; }
+        
+        #timer {
+            font-size: 1.4em;
+            color: #00ecff; /* Elektrik mavisi */
+            background: #000;
+            padding: 15px;
+            border-radius: 10px;
+            border: 1px solid #005a61;
+            text-shadow: 0 0 5px #00ecff;
+        }
+    </style>
+</head>
+<body>
+
+<canvas id="ceryan"></canvas>
+
+<div class="container">
+    <div class="flame">🕯️</div>
+    <h1>Mustafa ve Tan'ın Sığınağı</h1>
+    <p class="motto">"Gerçek dost Prodost"</p>
+    <div id="timer">Bağlanıyor...</div>
+</div>
+
+<script>
+    // --- CERYAN AKIŞI (MATRIX GİBİ AMA ELEKTRİKSEL) ---
+    const canvas = document.getElementById('ceryan');
+    const ctx = canvas.getContext('2d');
+
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    const characters = "01"; // Dijital ceryan
+    const fontSize = 16;
+    const columns = canvas.width / fontSize;
+    const drops = [];
+
+    for (let x = 0; x < columns; x++) drops[x] = 1;
+
+    function drawCeryan() {
+        ctx.fillStyle = "rgba(0, 0, 0, 0.05)"; // İz bırakması için hafif şeffaf siyah
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        ctx.fillStyle = "#004444"; // Çok koyu ceryan rengi (arka plan için)
+        ctx.font = fontSize + "px monospace";
+
+        for (let i = 0; i < drops.length; i++) {
+            const text = characters.charAt(Math.floor(Math.random() * characters.length));
+            
+            // Rastgele bazıları daha parlak olsun (akım hissi)
+            if(Math.random() > 0.95) ctx.fillStyle = "#00ecff"; 
+            else ctx.fillStyle = "#003333";
+
+            ctx.fillText(text, i * fontSize, drops[i] * fontSize);
+
+            if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) {
+                drops[i] = 0;
+            }
+            drops[i]++;
+        }
+    }
+
+    // --- ZAMAN SAYACI ---
+    const startDate = new Date(2026, 4, 14, 14, 29).getTime();
+
+    function updateTimer() {
+        const now = new Date().getTime();
+        const distance = now - startDate;
+        const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+        document.getElementById("timer").innerHTML = 
+            days + " Gün " + hours + "s " + minutes + "dk " + seconds + "sn";
+    }
+
+    setInterval(drawCeryan, 33);
+    setInterval(updateTimer, 1000);
+
+    window.addEventListener('resize', () => {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+    });
+</script>
+
+</body>
+</html>
