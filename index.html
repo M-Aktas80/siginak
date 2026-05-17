@@ -44,6 +44,7 @@
             z-index: 2;
             max-width: 600px;
             margin-top: 50px;
+            width: 100%;
         }
 
         /* Mum Alanı */
@@ -85,28 +86,82 @@
             font-style: italic;
             font-size: 1.1rem;
             line-height: 1.6;
-            margin-bottom: 50px;
+            margin-bottom: 40px;
             color: #969798;
         }
 
-        /* Arama Motoru Alanı */
-        .arama-kutusu {
+        /* Ortak Kutu Tasarımı */
+        .siginak-kutusu {
             background: rgba(31, 40, 51, 0.6);
             border: 1px solid #45f3ff;
             padding: 20px;
             border-radius: 8px;
             box-shadow: 0 0 15px rgba(69, 243, 255, 0.2);
             width: 100%;
-            max-width: 400px;
-            margin: 0 auto;
+            max-width: 450px;
+            margin: 20px auto;
+            box-sizing: border-box;
         }
-        .arama-kutusu h3 {
+        .siginak-kutusu h3 {
             margin-top: 0;
             font-size: 0.9rem;
             color: #66fcf1;
             letter-spacing: 2px;
             text-transform: uppercase;
         }
+
+        /* Not Bırakma Alanı */
+        .not-textarea {
+            width: 100%;
+            height: 80px;
+            background: #0b0c10;
+            border: 1px solid #c5c6c7;
+            color: #fff;
+            padding: 10px;
+            border-radius: 4px;
+            font-family: monospace;
+            resize: none;
+            outline: none;
+            box-sizing: border-box;
+            margin-bottom: 10px;
+        }
+        .not-textarea:focus {
+            border-color: #45f3ff;
+        }
+        .genel-buton {
+            background: #45f3ff;
+            border: none;
+            color: #0b0c10;
+            padding: 10px 20px;
+            border-radius: 4px;
+            font-weight: bold;
+            cursor: pointer;
+            font-family: monospace;
+            transition: 0.3s;
+            width: 100%;
+        }
+        .genel-buton:hover {
+            background: #66fcf1;
+            box-shadow: 0 0 10px #66fcf1;
+        }
+        .not-listesi {
+            margin-top: 15px;
+            text-align: left;
+            max-height: 150px;
+            overflow-y: auto;
+            border-top: 1px dashed #45f3ff;
+            padding-top: 10px;
+        }
+        .not-item {
+            background: rgba(11, 12, 16, 0.8);
+            padding: 8px;
+            margin-bottom: 5px;
+            border-left: 3px solid #66fcf1;
+            font-size: 0.9rem;
+            word-wrap: break-word;
+        }
+
+        /* Arama Alanı */
         .arama-form {
             display: flex;
             gap: 10px;
@@ -123,7 +178,6 @@
         }
         .arama-input:focus {
             border-color: #45f3ff;
-            box-shadow: 0 0 5px #45f3ff;
         }
         .arama-buton {
             background: #45f3ff;
@@ -138,7 +192,6 @@
         }
         .arama-buton:hover {
             background: #66fcf1;
-            box-shadow: 0 0 10px #66fcf1;
         }
     </style>
 </head>
@@ -159,8 +212,16 @@
             "Gördüğün gördüğün gibi, duyduğun duyduğun gibi olmayabilir."
         </div>
 
+        <!-- Sığınak Not Defteri Köşesi -->
+        <div class="siginak-kutusu">
+            <h3>Sığınak Not Defteri</h3>
+            <textarea id="notGirdisi" class="not-textarea" placeholder="Sığınağa dürüst bir not bırak..."></textarea>
+            <button onclick="notEkle()" class="genel-buton">Notu Kazı</button>
+            <div id="notlar" class="not-listesi"></div>
+        </div>
+
         <!-- DuckDuckGo Arama Kapısı -->
-        <div class="arama-kutusu">
+        <div class="siginak-kutusu">
             <h3>Sığınak Arama Kapısı</h3>
             <form class="arama-form" action="https://duckduckgo.com/" method="get" target="_blank">
                 <input type="text" name="q" class="arama-input" placeholder="İnternette ara..." required>
@@ -170,6 +231,7 @@
     </div>
 
     <script>
+        // Kronometre Fonksiyonu
         function kronometre() {
             const baslangic = new Date("2026-03-26T00:00:00").getTime();
             
@@ -186,7 +248,36 @@
                     gun + " Gün " + saat + " Saat " + dakika + " Dakika " + saniye + " Saniye";
             }, 1000);
         }
-        window.onload = kronometre;
+
+        // Notları Tarayıcıya Kaydetme ve Yükleme
+        function notlariYukle() {
+            const saklananNotlar = JSON.parse(localStorage.getItem("siginakNotlari")) || [];
+            const liste = document.getElementById("notlar");
+            liste.innerHTML = "";
+            saklananNotlar.reverse().forEach(not => {
+                const div = document.createElement("div");
+                div.className = "not-item";
+                div.innerText = not;
+                liste.appendChild(div);
+            });
+        }
+
+        function notEkle() {
+            const metin = document.getElementById("notGirdisi").value.trim();
+            if(metin === "") return;
+
+            const saklananNotlar = JSON.parse(localStorage.getItem("siginakNotlari")) || [];
+            saklananNotlar.push(metin);
+            localStorage.setItem("siginakNotlari", JSON.stringify(saklananNotlar));
+            
+            document.getElementById("notGirdisi").value = "";
+            notlariYukle();
+        }
+
+        window.onload = function() {
+            kronometre();
+            notlariYukle();
+        };
     </script>
 
 </body>
