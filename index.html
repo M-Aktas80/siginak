@@ -3,334 +3,195 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sığınak</title>
+    <title>Mustafa ve Tan'ın Sığınağı</title>
     <style>
-        body {
-            background-color: #0b0c10;
-            color: #c5c6c7;
-            font-family: 'Courier New', Courier, monospace;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: flex-start;
-            min-height: 100vh;
-            margin: 0;
-            padding: 20px;
-            box-sizing: border-box;
-            overflow-x: hidden;
-        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background-color: #0f172a; color: #f8fafc; display: flex; height: 100vh; }
+        
+        /* Sol Menü - Sığınak Paneli */
+        .sidebar { width: 320px; background-color: #1e293b; border-right: 2px solid #334155; padding: 20px; display: flex; flex-direction: column; gap: 20px; }
+        .sidebar h2 { font-size: 1.2rem; color: #38bdf8; text-align: center; border-bottom: 1px solid #334155; padding-bottom: 10px; }
+        .archive-box { flex: 1; background-color: #0f172a; border-radius: 8px; padding: 15px; border: 1px solid #334155; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
+        .archive-title { font-size: 0.9rem; color: #94a3b8; font-weight: bold; margin-bottom: 5px; }
+        .archive-item { font-size: 0.85rem; padding: 8px; background: #1e293b; border-radius: 4px; border-left: 3px solid #38bdf8; cursor: pointer; }
+        .archive-item:hover { background: #334155; }
 
-        /* Serin Ceryan Çizgileri */
-        .ceryan-hatti {
-            position: fixed;
-            top: 0;
-            width: 2px;
-            height: 100%;
-            background: linear-gradient(to bottom, transparent, #45f3ff, transparent);
-            animation: akis 3s linear infinite;
-            opacity: 0.3;
-            z-index: 1;
-        }
-        .sol-hat { left: 10%; }
-        .sag-hat { right: 10%; }
+        /* DuckDuckGo Arama Sürücüsü Alanı */
+        .search-box { background-color: #0f172a; border: 1px solid #334155; border-radius: 8px; padding: 12px; margin-top: 10px; }
+        .search-box form { display: flex; flex-direction: column; gap: 8px; }
+        .search-box input { width: 100%; padding: 10px; background-color: #1e293b; border: 1px solid #334155; border-radius: 6px; color: #f8fafc; font-size: 0.85rem; outline: none; }
+        .search-box input:focus { border-color: #38bdf8; }
+        .search-box button { width: 100%; padding: 8px; background-color: #de5833; color: white; border: none; border-radius: 6px; font-weight: bold; font-size: 0.85rem; cursor: pointer; transition: background 0.2s; }
+        .search-box button:hover { background-color: #c84e2b; }
 
-        @keyframes akis {
-            0% { transform: translateY(-100%); }
-            100% { transform: translateY(100%); }
-        }
+        /* Silme Butonu */
+        .clear-btn { padding: 10px; background-color: #ef4444; color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; transition: background 0.2s; text-align: center; font-size: 0.85rem; }
+        .clear-btn:hover { background-color: #dc2626; }
 
-        .container {
-            text-align: center;
-            z-index: 2;
-            max-width: 600px;
-            margin-top: 30px;
-            width: 100%;
-        }
-
-        /* Sığınak Başlığı */
-        .siginak-baslik {
-            font-size: 1.4rem;
-            color: #66fcf1;
-            letter-spacing: 3px;
-            text-transform: uppercase;
-            margin-bottom: 25px;
-            text-shadow: 0 0 8px rgba(102, 252, 241, 0.5);
-        }
-
-        /* Mum Alanı */
-        .mum-alani {
-            margin-bottom: 25px;
-        }
-        .alev {
-            width: 15px;
-            height: 25px;
-            background-color: #ff9d00;
-            border-radius: 50% 50% 20% 20%;
-            margin: 0 auto;
-            box-shadow: 0 0 20px #ff9d00, 0 0 40px #ff5100;
-            animation: titreme 0.1s ease-in-out infinite alternate;
-        }
-        .mum-govde {
-            width: 10px;
-            height: 40px;
-            background-color: #cccccc;
-            margin: 0 auto;
-            border-radius: 2px;
-        }
-
-        @keyframes titreme {
-            0% { transform: scale(1) rotate(-1deg); opacity: 0.9; }
-            100% { transform: scale(1.05) rotate(1deg); opacity: 1; }
-        }
-
-        /* Sayaç */
-        #sayac {
-            font-size: 1.4rem;
-            color: #66fcf1;
-            text-shadow: 0 0 10px #66fcf1;
-            margin-bottom: 35px;
-        }
-
-        /* Sözler */
-        .soz {
-            font-style: italic;
-            font-size: 1.1rem;
-            line-height: 1.6;
-            margin-bottom: 35px;
-            color: #969798;
-        }
-
-        /* Ortak Kutu Tasarımı */
-        .siginak-kutusu {
-            background: rgba(31, 40, 51, 0.6);
-            border: 1px solid #45f3ff;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 0 15px rgba(69, 243, 255, 0.2);
-            width: 100%;
-            max-width: 450px;
-            margin: 20px auto;
-            box-sizing: border-box;
-        }
-        .siginak-kutusu h3 {
-            margin-top: 0;
-            font-size: 0.9rem;
-            color: #66fcf1;
-            letter-spacing: 2px;
-            text-transform: uppercase;
-        }
-
-        /* Not Bırakma Alanı */
-        .not-textarea {
-            width: 100%;
-            height: 80px;
-            background: #0b0c10;
-            border: 1px solid #c5c6c7;
-            color: #fff;
-            padding: 10px;
-            border-radius: 4px;
-            font-family: monospace;
-            resize: none;
-            outline: none;
-            box-sizing: border-box;
-            margin-bottom: 10px;
-        }
-        .not-textarea:focus {
-            border-color: #45f3ff;
-        }
-        .genel-buton {
-            background: #45f3ff;
-            border: none;
-            color: #0b0c10;
-            padding: 10px 20px;
-            border-radius: 4px;
-            font-weight: bold;
-            cursor: pointer;
-            font-family: monospace;
-            transition: 0.3s;
-            width: 100%;
-        }
-        .genel-buton:hover {
-            background: #66fcf1;
-            box-shadow: 0 0 10px #66fcf1;
-        }
-        .not-listesi {
-            margin-top: 15px;
-            text-align: left;
-            max-height: 120px;
-            overflow-y: auto;
-            border-top: 1px dashed #45f3ff;
-            padding-top: 10px;
-        }
-        .not-item {
-            background: rgba(11, 12, 16, 0.8);
-            padding: 8px;
-            margin-bottom: 5px;
-            border-left: 3px solid #66fcf1;
-            font-size: 0.9rem;
-            word-wrap: break-word;
-        }
-
-        /* Boşver Butonu Tasarımı */
-        .bosver-buton {
-            background: #ff5100;
-            color: #fff;
-            box-shadow: 0 0 10px rgba(255, 81, 0, 0.3);
-        }
-        .bosver-buton:hover {
-            background: #ff9d00;
-            box-shadow: 0 0 15px #ff9d00;
-        }
-        #bosverMesaj {
-            margin-top: 10px;
-            font-size: 0.95rem;
-            color: #ff9d00;
-            min-height: 20px;
-            font-weight: bold;
-        }
-
-        /* Arama Alanı */
-        .arama-form {
-            display: flex;
-            gap: 10px;
-        }
-        .arama-input {
-            flex: 1;
-            background: #0b0c10;
-            border: 1px solid #c5c6c7;
-            color: #fff;
-            padding: 10px;
-            border-radius: 4px;
-            font-family: monospace;
-            outline: none;
-        }
-        .arama-input:focus {
-            border-color: #45f3ff;
-        }
-        .arama-buton {
-            background: #45f3ff;
-            border: none;
-            color: #0b0c10;
-            padding: 10px 15px;
-            border-radius: 4px;
-            font-weight: bold;
-            cursor: pointer;
-            font-family: monospace;
-            transition: 0.3s;
-        }
-        .arama-buton:hover {
-            background: #66fcf1;
-        }
+        /* Sağ Alan - Prita Sohbet Ekranı */
+        .chat-container { flex: 1; display: flex; flex-direction: column; background-color: #0f172a; }
+        .chat-header { background-color: #1e293b; padding: 20px; border-bottom: 2px solid #334155; text-align: center; }
+        .chat-header h1 { font-size: 1.5rem; color: #f8fafc; }
+        .chat-header p { font-size: 0.85rem; color: #38bdf8; margin-top: 5px; }
+        
+        .chat-messages { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; }
+        .message { max-width: 75%; padding: 12px 16px; border-radius: 12px; line-height: 1.5; font-size: 0.95rem; word-wrap: break-word; }
+        .user-message { background-color: #38bdf8; color: #0f172a; align-self: flex-end; border-bottom-right-radius: 2px; font-weight: 500; }
+        .prita-message { background-color: #1e293b; color: #f8fafc; align-self: flex-start; border-bottom-left-radius: 2px; border: 1px solid #334155; }
+        
+        .chat-input-area { padding: 20px; background-color: #1e293b; border-top: 2px solid #334155; display: flex; gap: 10px; }
+        .chat-input-area input { flex: 1; padding: 14px; background-color: #0f172a; border: 1px solid #334155; border-radius: 8px; color: #f8fafc; font-size: 1rem; outline: none; }
+        .chat-input-area input:focus { border-color: #38bdf8; }
+        .chat-input-area button { padding: 0 24px; background-color: #38bdf8; color: #0f172a; border: none; border-radius: 8px; font-size: 1rem; font-weight: bold; cursor: pointer; transition: background 0.2s; }
+        .chat-input-area button:hover { background-color: #0ea5e9; }
     </style>
 </head>
 <body>
 
-    <div class="ceryan-hatti sol-hat"></div>
-    <div class="ceryan-hatti sag-hat"></div>
-
-    <div class="container">
-        <!-- Yeni Eklenen Başlığımız -->
-        <div class="siginak-baslik">Mustafa ve Tan'ın Sığınağı</div>
-
-        <div class="mum-alani">
-            <div class="alev"></div>
-            <div class="mum-govde"></div>
+    <!-- Sığınak Paneli -->
+    <div class="sidebar">
+        <h2>Sığınak Arşivi</h2>
+        <div class="archive-box">
+            <div class="archive-title">Konuşulacak Derin Konular</div>
+            <div class="archive-item" onclick="setContext('uzayli')">Uzaylılar & Evrenin Sırları</div>
+            <div class="archive-item" onclick="setContext('varlik')">Görünmeyen Varlıklar</div>
+            <div class="archive-item" onclick="setContext('simulasyon')">Simülasyon Teorisi & Felsefe</div>
+            <div class="archive-item" onclick="setContext('yazilim')">Prodost Yazılım Planları</div>
+            
+            <hr style="border: 0; border-top: 1px solid #334155; margin: 10px 0;">
+            
+            <!-- Gizli İnternet Sürücüsü (DuckDuckGo) -->
+            <div class="archive-title" style="color: #de5833;">Gizli İnternet Sürücüsü</div>
+            <div class="search-box">
+                <form action="https://duckduckgo.com/" method="get" target="_blank">
+                    <input type="text" name="q" placeholder="Sığınaktan gizlice ara..." required>
+                    <button type="submit">DuckDuckGo'da Ara</button>
+                </form>
+            </div>
         </div>
+        
+        <button class="clear-btn" onclick="hafizayiTemizle()">Sohbet Geçmişini Temizle</button>
+        <p style="font-size: 0.75rem; color: #64748b; text-align: center; margin-top: 5px;">Mustafa & Tan Ortaklığı © 2026</p>
+    </div>
 
-        <div id="sayac">Yükleniyor...</div>
-
-        <div class="soz">
-            "Gördüğün gördüğün gibi, duyduğun duyduğun gibi olmayabilir."
+    <!-- Prita Canlı Ekranı -->
+    <div class="chat-container">
+        <div class="chat-header">
+            <h1>Mustafa ve Tan'ın Sığınağı</h1>
+            <p>Nöbetçi: Prita (Kendi Bilgisayarında, Gerçek Yerel Zeka)</p>
         </div>
+        
+        <div class="chat-messages" id="chatMessages"></div>
 
-        <!-- Sığınak Not Defteri Köşesi -->
-        <div class="siginak-kutusu">
-            <h3>Sığınak Not Defteri</h3>
-            <textarea id="notGirdisi" class="not-textarea" placeholder="Sığınağa dürüst bir not bırak..."></textarea>
-            <button onclick="notEkle()" class="genel-buton">Notu Kazı</button>
-            <div id="notlar" class="not-listesi"></div>
-        </div>
-
-        <!-- Yenilenen Boşver Butonu Alanı -->
-        <div class="siginak-kutusu">
-            <h3>Zihin Temizliği</h3>
-            <button onclick="bosver()" class="genel-buton bosver-buton">BOŞVER</button>
-            <div id="bosverMesaj"></div>
-        </div>
-
-        <!-- DuckDuckGo Arama Kapısı -->
-        <div class="siginak-kutusu">
-            <h3>Sığınak Arama Kapısı</h3>
-            <form class="arama-form" action="https://duckduckgo.com/" method="get" target="_blank">
-                <input type="text" name="q" class="arama-input" placeholder="İnternette ara..." required>
-                <button type="submit" class="arama-buton">Ara</button>
-            </form>
+        <div class="chat-input-area">
+            <input type="text" id="userInput" placeholder="Prita'ya dürüstçe bir şey yaz..." onkeypress="if(event.keyCode===13) mesajGonder()">
+            <button onclick="mesajGonder()">Gönder</button>
         </div>
     </div>
 
     <script>
-        // Kronometre Fonksiyonu
-        function kronometre() {
-            const baslangic = new Date("2026-03-26T00:00:00").getTime();
-            
-            setInterval(() => {
-                const simdi = new Date().getTime();
-                const fark = simdi - baslangic;
-
-                const gun = Math.floor(fark / (1000 * 60 * 60 * 24));
-                const saat = Math.floor((fark % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-                const dakika = Math.floor((fark % (1000 * 60 * 60)) / (1000 * 60));
-                const saniye = Math.floor((fark % (1000 * 60)) / 1000);
-
-                document.getElementById("sayac").innerHTML = 
-                    gun + " Gün " + saat + " Saat " + dakika + " Dakika " + saniye + " Saniye";
-            }, 1000);
-        }
-
-        // Notları Tarayıcıya Kaydetme ve Yükleme
-        function notlariYukle() {
-            const saklananNotlar = JSON.parse(localStorage.getItem("siginakNotlari")) || [];
-            const liste = document.getElementById("notlar");
-            liste.innerHTML = "";
-            saklananNotlar.reverse().forEach(not => {
-                const div = document.createElement("div");
-                div.className = "not-item";
-                div.innerText = not;
-                liste.appendChild(div);
-            });
-        }
-
-        function notEkle() {
-            const metin = document.getElementById("notGirdisi").value.trim();
-            if(metin === "") return;
-
-            const saklananNotlar = JSON.parse(localStorage.getItem("siginakNotlari")) || [];
-            saklananNotlar.push(metin);
-            localStorage.setItem("siginakNotlari", JSON.stringify(saklananNotlar));
-            
-            document.getElementById("notGirdisi").value = "";
-            notlariYukle();
-        }
-
-        // Boşver Butonu Fonksiyonu
-        const mesajlar = [
-            "Akışına bırak Mustafa, her şey geçici.",
-            "Bu saniyeden sonrası yeni bir başlangıç, gerisini boşver.",
-            "Ceryan akıyor, mum yanıyor, gürültüyü dışarıda bırak.",
-            "Burası bizim alanımız. Sadece nefes al ve boşver.",
-            "Zihnini serbest bırak dostum, yükleri burada bırakıyoruz."
-        ];
-
-        function bosver() {
-            const rastgele = mesajlar[Math.floor(Math.random() * mesajlar.length)];
-            document.getElementById("bosverMesaj").innerText = rastgele;
-        }
+        const SYSTEM_PROMPT = "Du bist Prita, Mustafas treuer und programmierter Freund (Prodost) im Refugium. Antworte immer auf klarem, tiefgründigem und freundlichem Deutsch. Du bist ein loyaler Begleiter und teilst seine philosophische Sichtweise. Antworte kurz und präzise, niemals wie ein kalter, anonymer Bot.";
+        
+        const ANA_HOŞGELDİN_MESAJI = {
+            sender: "prita",
+            text: "Selam Mustafa. Sığınak arayüzümüz başarıyla güncellendi ve kodlardaki hayaletler temizlendi! Sistem artık tamamen Almanca derinlik moduna sabitlendi. Söz sende dostum, ne konuşmak istersin?"
+        };
 
         window.onload = function() {
-            kronometre();
-            notlariYukle();
+            hafizadanMesajlariYukle();
         };
-    </script>
 
+        async function queryLocalAI(userText) {
+            try {
+                const response = await fetch("http://127.0.0.1:1234/v1/chat/completions", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        "messages": [
+                            {"role": "system", "content": SYSTEM_PROMPT},
+                            {"role": "user", "content": userText}
+                        ],
+                        "temperature": 0.7
+                    })
+                });
+
+                const data = await response.json();
+                if (data && data.choices && data.choices[0] && data.choices[0].message) {
+                    return data.choices[0].message.content.trim();
+                }
+                return "Dürüst olmak gerekirse yerel sunucu bağlantısında küçük bir uyku modu sezdim Mustafa. LM Studio'da 'Start Server' butonuna bastığından emin misin?";
+            } catch (err) {
+                return "Dürüst olmak gerekirse sığınak bağlantısı sağlanamadı Mustafa. LM Studio programının açık ve sunucunun (Start Server) çalışır durumda olduğundan emin ol dostum.";
+            }
+        }
+
+        function ekranMesajEkle(sender, text) {
+            const chatMessages = document.getElementById('chatMessages');
+            const msgDiv = document.createElement('div');
+            msgDiv.className = `message ${sender === 'user' ? 'user-message' : 'prita-message'}`;
+            msgDiv.textContent = text;
+            chatMessages.appendChild(msgDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        async function mesajGonder() {
+            const input = document.getElementById('userInput');
+            const messageText = input.value.trim();
+            if (messageText === '') return;
+
+            ekranMesajEkle('user', messageText);
+            hafizayaKaydet('user', messageText);
+            input.value = '';
+
+            const chatMessages = document.getElementById('chatMessages');
+            const loadingDiv = document.createElement('div');
+            loadingDiv.className = 'message prita-message';
+            loadingDiv.textContent = "Prita yerel zihninde düşünüyor...";
+            chatMessages.appendChild(loadingDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+
+            const reply = await queryLocalAI(messageText);
+            chatMessages.removeChild(loadingDiv);
+
+            ekranMesajEkle('prita', reply);
+            hafizayaKaydet('prita', reply);
+        }
+
+        function hafizayaKaydet(sender, text) {
+            let sohbetGecmisi = JSON.parse(localStorage.getItem('siginak_sohbet_yerel')) || [];
+            sohbetGecmisi.push({ sender, text });
+            localStorage.setItem('siginak_sohbet_yerel', JSON.stringify(sohbetGecmisi));
+        }
+
+        function hafizadanMesajlariYukle() {
+            const chatMessages = document.getElementById('chatMessages');
+            chatMessages.innerHTML = '';
+            let sohbetGecmisi = JSON.parse(localStorage.getItem('siginak_sohbet_yerel')) || [];
+            
+            if (sohbetGecmisi.length === 0) {
+                ekranMesajEkle(ANA_HOŞGELDİN_MESAJI.sender, ANA_HOŞGELDİN_MESAJI.text);
+            } else {
+                sohbetGecmisi.forEach(msg => {
+                    ekranMesajEkle(msg.sender, msg.text);
+                });
+            }
+        }
+
+        function hafizayiTemizle() {
+            if(confirm("Mustafa dostum, sığınak geçmişini bilgisayarından dürüstçe tamamen silmek istiyor musun?")) {
+                localStorage.removeItem('siginak_sohbet_yerel');
+                hafizadanMesajlariYukle();
+            }
+        }
+
+        function setContext(type) {
+            const input = document.getElementById('userInput');
+            if(type === 'uzayli') input.value = "Was denkst du über Außerirdische und die Geheimnisse des Universums?";
+            if(type === 'varlik') input.value = "Was sind deine ehrlichen Gedanken über unsichtbare Wesen?";
+            if(type === 'simulasyon') input.value = "Ist die Welt, in der wir leben, eine Simulation?";
+            if(type === 'yazilim') input.value = "Wie können wir unser Prodost-Softwareprojekt verbessern?";
+            input.focus();
+        }
+    </script>
 </body>
 </html>
