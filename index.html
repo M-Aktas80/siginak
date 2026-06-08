@@ -3,20 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <title>Prita - Sığınak</title>
-    <script defer src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.js"></script>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
         body { background-color: #0f172a; color: #f8fafc; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
         .prita-badge { text-align: center; padding: 15px; background: #1e293b; border-bottom: 2px solid #38bdf8; font-size: 1.5rem; font-weight: bold; color: #38bdf8; letter-spacing: 1px; }
         .chat-messages { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; }
-        .message { max-width: 80%; padding: 12px 16px; border-radius: 12px; line-height: 1.5; }
+        .message { max-width: 80%; padding: 12px 16px; border-radius: 12px; }
         .user-message { background-color: #38bdf8; color: #0f172a; align-self: flex-end; }
         .prita-message { background-color: #1e293b; border: 1px solid #334155; align-self: flex-start; }
         .chat-input-area { padding: 20px; background-color: #1e293b; display: flex; gap: 10px; border-top: 1px solid #334155; }
         #voiceBtn { padding: 12px 20px; background-color: #ef4444; border: none; border-radius: 8px; color: white; cursor: pointer; font-weight: bold; }
         #voiceBtn.active { background-color: #22c55e; }
-        #userInput { flex-grow: 1; padding: 12px; border-radius: 8px; border: 1px solid #334155; background: #0f172a; color: white; outline: none; }
-        button#sendBtn { padding: 12px 20px; background-color: #38bdf8; color: #0f172a; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
+        #userInput { flex-grow: 1; padding: 12px; border-radius: 8px; border: 1px solid #334155; background: #0f172a; color: white; }
     </style>
 </head>
 <body>
@@ -25,38 +23,49 @@
     <div class="chat-messages" id="chatMessages"></div>
     <div class="chat-input-area">
         <button id="voiceBtn" onclick="sesiBaslat()">🎙️ Konuş</button>
-        <input type="text" id="userInput" placeholder="Yaz veya mikrofona bas..." onkeypress="handleEnter(event)">
-        <button id="sendBtn" onclick="mesajGonder()">Gönder</button>
+        <input type="text" id="userInput" placeholder="Yaz veya konuş..." onkeypress="if(event.key==='Enter') mesajGonder()">
+        <button onclick="mesajGonder()">Gönder</button>
     </div>
 
     <script>
         const SERVER_URL = "http://127.0.0.1:1234/v1/chat/completions";
-
-        navigator.mediaDevices.getUserMedia({ video: true, audio: true }).catch(err => {
-            console.error("İzin reddedildi:", err);
-        });
-
-        const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
-        recognition.lang = 'tr-TR';
         const btn = document.getElementById('voiceBtn');
+        
+        // Ses motoru kurulumu
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        const recognition = new SpeechRecognition();
+        recognition.lang = 'tr-TR';
+        recognition.continuous = false; // Sürekli dinleme kapatıldı, hata payı düşürüldü
 
         function sesiBaslat() {
             btn.innerText = "Dinliyorum...";
             btn.classList.add('active');
-            recognition.start();
+            try {
+                recognition.start();
+            } catch(e) {
+                recognition.stop();
+                setTimeout(() => recognition.start(), 500);
+            }
         }
 
         recognition.onresult = (event) => {
-            document.getElementById('userInput').value = event.results[0][0].transcript;
+            const metin = event.results[0][0].transcript;
+            document.getElementById('userInput').value = metin;
             btn.innerText = "🎙️ Konuş";
             btn.classList.remove('active');
             mesajGonder();
         };
 
-        // Enter tuşu kontrolü
-        function handleEnter(e) {
-            if (e.key === 'Enter') mesajGonder();
-        }
+        // Hata durumunda otomatik reset
+        recognition.onerror = () => {
+            btn.innerText = "🎙️ Konuş";
+            btn.classList.remove('active');
+        };
+
+        recognition.onend = () => {
+            btn.innerText = "🎙️ Konuş";
+            btn.classList.remove('active');
+        };
 
         async function mesajGonder() {
             const input = document.getElementById('userInput');
@@ -69,12 +78,10 @@
             document.getElementById('chatMessages').appendChild(div);
             input.value = '';
 
-            // Düşünüyor mesajı
             const statusDiv = document.createElement('div');
             statusDiv.className = 'message prita-message';
             statusDiv.innerText = "Prita düşünüyor...";
             document.getElementById('chatMessages').appendChild(statusDiv);
-            document.getElementById('chatMessages').scrollTop = document.getElementById('chatMessages').scrollHeight;
 
             try {
                 const res = await fetch(SERVER_URL, {
@@ -85,10 +92,9 @@
                     })
                 });
                 const data = await res.json();
-                const reply = data.choices[0].message.content;
-
-                statusDiv.remove(); // Düşünüyor mesajını kaldır
+                statusDiv.remove();
                 
+                const reply = data.choices[0].message.content;
                 const replyDiv = document.createElement('div');
                 replyDiv.className = 'message prita-message';
                 replyDiv.innerText = reply;
@@ -98,7 +104,7 @@
                 ut.lang = 'de-DE';
                 window.speechSynthesis.speak(ut);
             } catch(err) {
-                statusDiv.innerText = "Hata: LM Studio ile bağlantı kurulamadı.";
+                statusDiv.innerText = "Sunucuya ulaşılamadı. LM Studio'yu kontrol et.";
             }
         }
     </script>
