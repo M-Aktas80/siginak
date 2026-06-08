@@ -13,7 +13,7 @@
         .prita-message { background-color: #1e293b; border: 1px solid #334155; align-self: flex-start; }
         .chat-input-area { padding: 20px; background-color: #1e293b; display: flex; gap: 10px; }
         button { padding: 10px 20px; background-color: #38bdf8; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; }
-        button.recording { background-color: #ef4444; }
+        button.recording { background-color: #ef4444; color: white; }
     </style>
 </head>
 <body>
@@ -72,8 +72,7 @@
             const data = await res.json();
             const reply = data.choices[0].message.content;
             
-            // Cevabı hem ekrana yaz hem seslendir
-            pritaSeslendir(reply);
+            pritaSeslendir(reply); // Cevabı seslendir
             return reply;
         }
 
