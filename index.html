@@ -25,15 +25,13 @@
     <div class="chat-messages" id="chatMessages"></div>
     <div class="chat-input-area">
         <button id="voiceBtn" onclick="sesiBaslat()">🎙️ Konuş</button>
-        <input type="text" id="userInput" placeholder="Yaz veya mikrofona bas...">
+        <input type="text" id="userInput" placeholder="Yaz veya mikrofona bas..." onkeypress="handleEnter(event)">
         <button id="sendBtn" onclick="mesajGonder()">Gönder</button>
     </div>
 
     <script>
-        // BURAYI GÜNCELLE: Yereldeyken 127.0.0.1, uzaktayken Ngrok HTTPS linki
         const SERVER_URL = "http://127.0.0.1:1234/v1/chat/completions";
 
-        // Güvenlik: Kamera ve Mikrofonu eş zamanlı başlat
         navigator.mediaDevices.getUserMedia({ video: true, audio: true }).catch(err => {
             console.error("İzin reddedildi:", err);
         });
@@ -55,11 +53,10 @@
             mesajGonder();
         };
 
-        recognition.onerror = () => {
-            btn.innerText = "🎙️ Konuş";
-            btn.classList.remove('active');
-            alert("Ses alınamadı. Mikrofon iznini kontrol et.");
-        };
+        // Enter tuşu kontrolü
+        function handleEnter(e) {
+            if (e.key === 'Enter') mesajGonder();
+        }
 
         async function mesajGonder() {
             const input = document.getElementById('userInput');
@@ -72,6 +69,13 @@
             document.getElementById('chatMessages').appendChild(div);
             input.value = '';
 
+            // Düşünüyor mesajı
+            const statusDiv = document.createElement('div');
+            statusDiv.className = 'message prita-message';
+            statusDiv.innerText = "Prita düşünüyor...";
+            document.getElementById('chatMessages').appendChild(statusDiv);
+            document.getElementById('chatMessages').scrollTop = document.getElementById('chatMessages').scrollHeight;
+
             try {
                 const res = await fetch(SERVER_URL, {
                     method: "POST",
@@ -83,6 +87,8 @@
                 const data = await res.json();
                 const reply = data.choices[0].message.content;
 
+                statusDiv.remove(); // Düşünüyor mesajını kaldır
+                
                 const replyDiv = document.createElement('div');
                 replyDiv.className = 'message prita-message';
                 replyDiv.innerText = reply;
@@ -92,7 +98,7 @@
                 ut.lang = 'de-DE';
                 window.speechSynthesis.speak(ut);
             } catch(err) {
-                alert("Bağlantı hatası: SERVER_URL adresini veya LM Studio'yu kontrol et.");
+                statusDiv.innerText = "Hata: LM Studio ile bağlantı kurulamadı.";
             }
         }
     </script>
