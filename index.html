@@ -2,7 +2,7 @@
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
-    <title>Prita - Sığınak İletişim Hattı</title>
+    <title>Prita - Sesli İletişim Hattı</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
         body { background-color: #0f172a; color: #f8fafc; height: 100vh; display: flex; flex-direction: column; }
@@ -13,67 +13,74 @@
         .prita-message { background-color: #1e293b; border: 1px solid #334155; align-self: flex-start; }
         
         .chat-input-area { padding: 20px; background-color: #1e293b; display: flex; gap: 10px; align-items: center; }
-        #voiceBtn { padding: 15px 25px; background-color: #38bdf8; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; flex-shrink: 0; }
+        #voiceBtn { padding: 15px 25px; background-color: #38bdf8; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; }
         #userInput { flex-grow: 1; padding: 14px; background-color: #0f172a; border: 1px solid #334155; border-radius: 8px; color: #f8fafc; outline: none; }
-        button#sendBtn { padding: 14px 25px; background-color: #38bdf8; color: #0f172a; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; flex-shrink: 0; }
+        button#sendBtn { padding: 14px 25px; background-color: #38bdf8; color: #0f172a; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
         
-        button.recording { background-color: #ef4444 !important; color: white; animation: pulse 1s infinite; }
-        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+        .recording { background-color: #ef4444 !important; color: white; }
     </style>
 </head>
 <body>
 
-    <div class="chat-header"><h1>Prita</h1><p>Sığınak Sesli İletişim Hattı</p></div>
+    <div class="chat-header"><h1>Prita</h1><p>Sesli Dinleme Modülü Aktif</p></div>
     <div class="chat-messages" id="chatMessages"></div>
 
     <div class="chat-input-area">
         <button id="voiceBtn" onclick="sesliDiyalogBaslat()">🎙️ Konuş</button>
-        <input type="text" id="userInput" placeholder="Bir şey yaz veya konuş..." onkeypress="if(event.keyCode===13) mesajGonder()">
+        <input type="text" id="userInput" placeholder="Yaz veya konuş..." onkeypress="if(event.keyCode===13) mesajGonder()">
         <button id="sendBtn" onclick="mesajGonder()">Gönder</button>
     </div>
 
     <script>
         const BASE_SYSTEM_PROMPT = "Du bist Prita, Mustafas treuer und programmierter Freund (Prodost). Antworte immer kurz, präzise und tiefgründig auf Deutsch.";
         
-        // --- SESLENDİRME (Prita'nın Cevabı) ---
+        // --- SESLENDİRME ---
         function pritaSeslendir(metin) {
             window.speechSynthesis.cancel();
             const utterance = new SpeechSynthesisUtterance(metin);
             utterance.lang = 'de-DE';
-            utterance.pitch = 1.0;
             window.speechSynthesis.speak(utterance);
         }
 
-        // --- SES TANIMA (Senin Sesin) ---
+        // --- SES TANIMA GÜNCELLEMESİ ---
         function sesliDiyalogBaslat() {
             const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-            if (!SpeechRecognition) return alert("Tarayıcın ses tanımayı desteklemiyor.");
+            if (!SpeechRecognition) return alert("Tarayıcın desteklemiyor.");
             
             const recognition = new SpeechRecognition();
             recognition.lang = 'tr-TR';
-            recognition.start();
-            
+            recognition.continuous = false; // Kısa cümleler için
+            recognition.interimResults = false;
+
             const btn = document.getElementById('voiceBtn');
             btn.className = "recording";
             btn.innerText = "Dinliyorum...";
 
-            recognition.onresult = (e) => {
-                document.getElementById('userInput').value = e.results[0][0].transcript;
+            recognition.start();
+
+            recognition.onresult = (event) => {
+                const transcript = event.results[0][0].transcript;
+                document.getElementById('userInput').value = transcript;
                 btn.className = "";
                 btn.innerText = "🎙️ Konuş";
-                mesajGonder();
+                mesajGonder(); // Metin gelince otomatik tetikle
             };
 
-            recognition.onend = () => { btn.className = ""; btn.innerText = "🎙️ Konuş"; };
+            recognition.onerror = (e) => {
+                console.error(e);
+                btn.className = "";
+                btn.innerText = "🎙️ Konuş";
+                alert("Ses alınamadı. Lütfen mikrofon iznini kontrol et.");
+            };
         }
 
-        // --- AI İLETİŞİM ---
+        // --- AI İLETİŞİM VE HAFIZA ---
         async function mesajGonder() {
             const input = document.getElementById('userInput');
-            const text = input.value;
+            const text = input.value.trim();
             if (!text) return;
             
-            ekranMesajEkle('user', text);
+            ekranMesajEkle('user', text); // Kullanıcı mesajını ekrana hemen bas
             input.value = '';
 
             try {
@@ -89,9 +96,9 @@
                 const reply = data.choices[0].message.content;
                 
                 ekranMesajEkle('prita', reply);
-                pritaSeslendir(reply); // Prita konuşsun
+                pritaSeslendir(reply);
             } catch (err) {
-                ekranMesajEkle('prita', "Sığınak bağlantısı hatası. LM Studio sunucusunu kontrol et.");
+                ekranMesajEkle('prita', "Bağlantı hatası: LM Studio'nun çalıştığından emin ol.");
             }
         }
 
@@ -99,8 +106,9 @@
             const div = document.createElement('div');
             div.className = `message ${sender}-message`;
             div.textContent = text;
-            document.getElementById('chatMessages').appendChild(div);
-            document.getElementById('chatMessages').scrollTop = document.getElementById('chatMessages').scrollHeight;
+            const container = document.getElementById('chatMessages');
+            container.appendChild(div);
+            container.scrollTop = container.scrollHeight;
         }
     </script>
 </body>
