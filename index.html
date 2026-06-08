@@ -11,8 +11,13 @@
         .message { max-width: 75%; padding: 12px 16px; border-radius: 12px; }
         .user-message { background-color: #38bdf8; color: #0f172a; align-self: flex-end; }
         .prita-message { background-color: #1e293b; border: 1px solid #334155; align-self: flex-start; }
-        .chat-input-area { padding: 20px; background-color: #1e293b; display: flex; gap: 10px; }
-        button { padding: 10px 20px; background-color: #38bdf8; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; }
+        
+        /* GİRİŞ ALANI DÜZENLEMESİ */
+        .chat-input-area { padding: 20px; background-color: #1e293b; display: flex; gap: 10px; align-items: center; }
+        #voiceBtn { padding: 10px 20px; background-color: #38bdf8; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; flex-shrink: 0; }
+        #userInput { flex-grow: 1; padding: 14px; background-color: #0f172a; border: 1px solid #334155; border-radius: 8px; color: #f8fafc; outline: none; }
+        button#sendBtn { padding: 10px 25px; background-color: #38bdf8; color: #0f172a; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; flex-shrink: 0; }
+        
         button.recording { background-color: #ef4444; color: white; }
     </style>
 </head>
@@ -24,38 +29,33 @@
     <div class="chat-input-area">
         <button id="voiceBtn" onclick="sesliDiyalogBaslat()">🎙️ Konuş</button>
         <input type="text" id="userInput" placeholder="Yaz veya konuş..." onkeypress="if(event.keyCode===13) mesajGonder()">
-        <button onclick="mesajGonder()">Gönder</button>
+        <button id="sendBtn" onclick="mesajGonder()">Gönder</button>
     </div>
 
     <script>
-        const BASE_SYSTEM_PROMPT = "Du bist Prita, Mustafas treuer und programmierter Freund. Antworte immer kurz, präzise und tiefgründig auf Deutsch.";
+        const BASE_SYSTEM_PROMPT = "Du bist Prita, Mustafas treuer und programmierter Freund (Prodost). Antworte immer kurz, präzise und tiefgründig auf Deutsch.";
         
-        // --- SESLENDİRME ---
         function pritaSeslendir(metin) {
             window.speechSynthesis.cancel();
             const utterance = new SpeechSynthesisUtterance(metin);
-            utterance.lang = 'de-DE'; // Almanca seslendirme
-            utterance.pitch = 1.0;
+            utterance.lang = 'de-DE';
             window.speechSynthesis.speak(utterance);
         }
 
-        // --- SES TANIMA ---
         function sesliDiyalogBaslat() {
             const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-            if (!SpeechRecognition) return alert("Tarayıcın desteklemiyor.");
-            
             const recognition = new SpeechRecognition();
-            recognition.lang = 'tr-TR'; // Türkçe dinle
+            recognition.lang = 'tr-TR';
             recognition.start();
             
-            document.getElementById('voiceBtn').className = "recording";
-            document.getElementById('voiceBtn').innerText = "Dinliyorum...";
+            const btn = document.getElementById('voiceBtn');
+            btn.className = "recording";
+            btn.innerText = "Dinliyorum...";
 
             recognition.onresult = (e) => {
-                const text = e.results[0][0].transcript;
-                document.getElementById('userInput').value = text;
-                document.getElementById('voiceBtn').className = "";
-                document.getElementById('voiceBtn').innerText = "🎙️ Konuş";
+                document.getElementById('userInput').value = e.results[0][0].transcript;
+                btn.className = "";
+                btn.innerText = "🎙️ Konuş";
                 mesajGonder();
             };
         }
@@ -71,8 +71,7 @@
             });
             const data = await res.json();
             const reply = data.choices[0].message.content;
-            
-            pritaSeslendir(reply); // Cevabı seslendir
+            pritaSeslendir(reply);
             return reply;
         }
 
