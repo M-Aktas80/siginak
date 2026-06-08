@@ -2,116 +2,90 @@
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
-    <title>Sığınak v6.0 - Stabil Sesli Sistem</title>
-    <script defer src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.js"></script>
+    <title>Prita - Sığınak İletişim Hattı</title>
     <style>
-        /* STİL AYARLARI AYNI KALDI */
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
-        body { background-color: #0f172a; color: #f8fafc; display: flex; height: 100vh; overflow: hidden; }
-        #lockScreen { position: fixed; top:0; left:0; width: 100%; height:100%; background: #020617; z-index:9999; display: flex; flex-direction:column; align-items:center; justify-content:center; }
-        .main-app { display: none; width: 100%; height: 100%; }
-        .main-app.unlocked { display: flex; }
-        .sidebar { width: 300px; background: #1e293b; padding: 20px; display: flex; flex-direction: column; gap: 15px; }
-        .chat-container { flex: 1; display: flex; flex-direction: column; }
+        body { background-color: #0f172a; color: #f8fafc; height: 100vh; display: flex; flex-direction: column; }
         .chat-messages { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; }
-        .message { max-width: 80%; padding: 12px 16px; border-radius: 12px; }
-        .user-message { background: #38bdf8; color: #0f172a; align-self: flex-end; }
-        .prita-message { background: #334155; align-self: flex-start; }
-        .chat-input-area { padding: 20px; background: #1e293b; display: flex; gap: 10px; }
-        input { flex: 1; padding: 12px; border-radius: 8px; border: 1px solid #475569; background: #0f172a; color: white; }
-        .voice-btn { padding: 10px 20px; background: #ef4444; border: none; border-radius: 8px; color: white; cursor: pointer; }
-        .voice-btn.active { background: #22c55e; }
+        .message { max-width: 75%; padding: 12px 16px; border-radius: 12px; }
+        .user-message { background-color: #38bdf8; color: #0f172a; align-self: flex-end; }
+        .prita-message { background-color: #1e293b; border: 1px solid #334155; align-self: flex-start; }
+        .chat-input-area { padding: 20px; background-color: #1e293b; display: flex; gap: 10px; }
+        #voiceBtn { padding: 15px 25px; background-color: #38bdf8; border: none; border-radius: 8px; cursor: pointer; }
+        #voiceBtn.dinliyor { background-color: #22c55e !important; box-shadow: 0 0 15px #22c55e; }
+        #userInput { flex-grow: 1; padding: 14px; border-radius: 8px; border: 1px solid #334155; background: #0f172a; color: white; }
     </style>
 </head>
 <body>
 
-    <div id="lockScreen">
-        <h2>Güvenlik Protokolü</h2>
-        <video id="webcam" autoplay muted style="width:300px;"></video>
-        <p id="faceStatus">Yüz doğrulanıyor...</p>
-    </div>
-
-    <div class="main-app" id="mainApp">
-        <div class="sidebar">
-            <h2>Sığınak</h2>
-            <button onclick="hafizayiTemizle()">Sohbeti Temizle</button>
-            <div id="memoryDisplay" style="margin-top:20px; font-size:0.8rem;"></div>
-        </div>
-        <div class="chat-container">
-            <div class="chat-messages" id="chatMessages"></div>
-            <div class="chat-input-area">
-                <button id="voiceBtn" class="voice-btn" onclick="sesiBaslat()">🎙️ Konuş</button>
-                <input type="text" id="userInput" placeholder="Mesajını yaz...">
-                <button onclick="mesajGonder()">Gönder</button>
-            </div>
-        </div>
+    <div class="chat-messages" id="chatMessages"></div>
+    <div class="chat-input-area">
+        <button id="voiceBtn" onclick="sesiBaslat()">🎙️ Konuş</button>
+        <input type="text" id="userInput" placeholder="Yaz veya mikrofona bas...">
+        <button onclick="mesajGonder()">Gönder</button>
     </div>
 
     <script>
-        // 1. GÜVENLİK
-        async function baslat() {
-            const stream = await navigator.mediaDevices.getUserMedia({ video: {} });
-            document.getElementById('webcam').srcObject = stream;
-            setTimeout(() => {
-                document.getElementById('lockScreen').style.display = 'none';
-                document.getElementById('mainApp').className = "main-app unlocked";
-            }, 2000);
-        }
-        baslat();
+        // Ses Tanıma Motoru
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        const recognition = new SpeechRecognition();
+        recognition.lang = 'tr-TR';
+        recognition.interimResults = false;
 
-        // 2. SES MOTORU (Stabil)
-        let recognition;
         function sesiBaslat() {
             const btn = document.getElementById('voiceBtn');
-            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-            recognition = new SpeechRecognition();
-            recognition.lang = 'tr-TR';
-            
-            recognition.onstart = () => { btn.innerText = "Dinliyorum..."; btn.className = "voice-btn active"; };
-            recognition.onresult = (event) => {
-                const text = event.results[0][0].transcript;
-                document.getElementById('userInput').value = text;
-                btn.innerText = "🎙️ Konuş";
-                btn.className = "voice-btn";
-                mesajGonder();
-            };
+            btn.classList.add('dinliyor');
+            btn.innerText = "Dinliyorum...";
             recognition.start();
         }
 
-        // 3. İLETİŞİM
+        recognition.onresult = (event) => {
+            const metin = event.results[0][0].transcript;
+            document.getElementById('userInput').value = metin;
+            const btn = document.getElementById('voiceBtn');
+            btn.classList.remove('dinliyor');
+            btn.innerText = "🎙️ Konuş";
+            mesajGonder(); // Metni alıp otomatik gönder
+        };
+
+        recognition.onerror = (e) => {
+            alert("Sığınak sesini alamadı. Hata: " + e.error);
+            document.getElementById('voiceBtn').classList.remove('dinliyor');
+        };
+
         async function mesajGonder() {
             const input = document.getElementById('userInput');
             const text = input.value;
             if(!text) return;
             
-            const msgDiv = document.createElement('div');
-            msgDiv.className = "message user-message";
-            msgDiv.innerText = text;
-            document.getElementById('chatMessages').appendChild(msgDiv);
-            
+            // Mesajı ekrana bas
+            const div = document.createElement('div');
+            div.className = 'message user-message';
+            div.innerText = text;
+            document.getElementById('chatMessages').appendChild(div);
+            input.value = '';
+
+            // AI'ya sor
             const res = await fetch("http://127.0.0.1:1234/v1/chat/completions", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
-                    messages: [{role: "system", content: "Sen Prita, Mustafa'nın arkadaşısın. Almanca cevap ver."}, {role: "user", content: text}]
+                    messages: [{role: "system", content: "Sen Prita, Almanca cevap ver."}, {role: "user", content: text}]
                 })
             });
             const data = await res.json();
             const reply = data.choices[0].message.content;
-            
+
+            // Prita'nın cevabını bas ve seslendir
             const replyDiv = document.createElement('div');
-            replyDiv.className = "message prita-message";
+            replyDiv.className = 'message prita-message';
             replyDiv.innerText = reply;
             document.getElementById('chatMessages').appendChild(replyDiv);
             
-            // SESLENDİRME
             const ut = new SpeechSynthesisUtterance(reply);
             ut.lang = 'de-DE';
             window.speechSynthesis.speak(ut);
-            input.value = "";
         }
-
-        function hafizayiTemizle() { document.getElementById('chatMessages').innerHTML = ""; }
     </script>
 </body>
 </html>
