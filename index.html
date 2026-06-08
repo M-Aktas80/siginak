@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>Prita - Sığınak</title>
+    <script defer src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.js"></script>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
         body { background-color: #0f172a; color: #f8fafc; height: 100vh; display: flex; flex-direction: column; }
@@ -27,66 +28,55 @@
     </div>
 
     <script>
-        const btn = document.getElementById('voiceBtn');
+        // Kamera izni alarak mikrofonun da "izinli" kalmasını sağlıyoruz
+        navigator.mediaDevices.getUserMedia({ video: true, audio: true }).catch(() => {
+            alert("Sığınak protokolü: Kamera ve Mikrofon izni olmadan Prita seni duyamaz!");
+        });
+
         const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
         recognition.lang = 'tr-TR';
-        recognition.continuous = false; 
 
         function sesiBaslat() {
-            try {
-                btn.innerText = "Dinliyorum...";
-                recognition.start();
-            } catch(e) {
-                console.log("Hata:", e);
-                alert("Mikrofon hatası: Sayfayı yenileyip tekrar izin verin.");
-            }
+            document.getElementById('voiceBtn').innerText = "Dinliyorum...";
+            recognition.start();
         }
 
         recognition.onresult = (event) => {
             const metin = event.results[0][0].transcript;
             document.getElementById('userInput').value = metin;
-            btn.innerText = "🎙️ Konuş";
+            document.getElementById('voiceBtn').innerText = "🎙️ Konuş";
             mesajGonder();
         };
-
-        recognition.onend = () => { btn.innerText = "🎙️ Konuş"; };
 
         async function mesajGonder() {
             const input = document.getElementById('userInput');
             const text = input.value;
             if(!text) return;
             
-            // Mesajı ekrana ekle
             const div = document.createElement('div');
             div.className = 'message user-message';
             div.innerText = text;
             document.getElementById('chatMessages').appendChild(div);
             input.value = '';
 
-            // AI'ya gönder
-            try {
-                const res = await fetch("http://127.0.0.1:1234/v1/chat/completions", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                        messages: [{role: "system", content: "Sen Prita, Almanca cevap ver."}, {role: "user", content: text}]
-                    })
-                });
-                const data = await res.json();
-                const reply = data.choices[0].message.content;
+            const res = await fetch("http://127.0.0.1:1234/v1/chat/completions", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    messages: [{role: "system", content: "Sen Prita, Almanca cevap ver."}, {role: "user", content: text}]
+                })
+            });
+            const data = await res.json();
+            const reply = data.choices[0].message.content;
 
-                // Cevabı ekle ve seslendir
-                const replyDiv = document.createElement('div');
-                replyDiv.className = 'message prita-message';
-                replyDiv.innerText = reply;
-                document.getElementById('chatMessages').appendChild(replyDiv);
-                
-                const ut = new SpeechSynthesisUtterance(reply);
-                ut.lang = 'de-DE';
-                window.speechSynthesis.speak(ut);
-            } catch(err) {
-                alert("LM Studio sunucusu yanıt vermiyor!");
-            }
+            const replyDiv = document.createElement('div');
+            replyDiv.className = 'message prita-message';
+            replyDiv.innerText = reply;
+            document.getElementById('chatMessages').appendChild(replyDiv);
+            
+            const ut = new SpeechSynthesisUtterance(reply);
+            ut.lang = 'de-DE';
+            window.speechSynthesis.speak(ut);
         }
     </script>
 </body>
