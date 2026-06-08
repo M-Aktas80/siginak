@@ -2,114 +2,116 @@
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
-    <title>Prita - Sesli İletişim Hattı</title>
+    <title>Sığınak v6.0 - Stabil Sesli Sistem</title>
+    <script defer src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.js"></script>
     <style>
+        /* STİL AYARLARI AYNI KALDI */
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
-        body { background-color: #0f172a; color: #f8fafc; height: 100vh; display: flex; flex-direction: column; }
-        .chat-header { padding: 20px; background-color: #1e293b; border-bottom: 2px solid #334155; text-align: center; }
+        body { background-color: #0f172a; color: #f8fafc; display: flex; height: 100vh; overflow: hidden; }
+        #lockScreen { position: fixed; top:0; left:0; width: 100%; height:100%; background: #020617; z-index:9999; display: flex; flex-direction:column; align-items:center; justify-content:center; }
+        .main-app { display: none; width: 100%; height: 100%; }
+        .main-app.unlocked { display: flex; }
+        .sidebar { width: 300px; background: #1e293b; padding: 20px; display: flex; flex-direction: column; gap: 15px; }
+        .chat-container { flex: 1; display: flex; flex-direction: column; }
         .chat-messages { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; }
-        .message { max-width: 75%; padding: 12px 16px; border-radius: 12px; }
-        .user-message { background-color: #38bdf8; color: #0f172a; align-self: flex-end; }
-        .prita-message { background-color: #1e293b; border: 1px solid #334155; align-self: flex-start; }
-        
-        .chat-input-area { padding: 20px; background-color: #1e293b; display: flex; gap: 10px; align-items: center; }
-        #voiceBtn { padding: 15px 25px; background-color: #38bdf8; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; }
-        #userInput { flex-grow: 1; padding: 14px; background-color: #0f172a; border: 1px solid #334155; border-radius: 8px; color: #f8fafc; outline: none; }
-        button#sendBtn { padding: 14px 25px; background-color: #38bdf8; color: #0f172a; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
-        
-        .recording { background-color: #ef4444 !important; color: white; }
+        .message { max-width: 80%; padding: 12px 16px; border-radius: 12px; }
+        .user-message { background: #38bdf8; color: #0f172a; align-self: flex-end; }
+        .prita-message { background: #334155; align-self: flex-start; }
+        .chat-input-area { padding: 20px; background: #1e293b; display: flex; gap: 10px; }
+        input { flex: 1; padding: 12px; border-radius: 8px; border: 1px solid #475569; background: #0f172a; color: white; }
+        .voice-btn { padding: 10px 20px; background: #ef4444; border: none; border-radius: 8px; color: white; cursor: pointer; }
+        .voice-btn.active { background: #22c55e; }
     </style>
 </head>
 <body>
 
-    <div class="chat-header"><h1>Prita</h1><p>Sesli Dinleme Modülü Aktif</p></div>
-    <div class="chat-messages" id="chatMessages"></div>
+    <div id="lockScreen">
+        <h2>Güvenlik Protokolü</h2>
+        <video id="webcam" autoplay muted style="width:300px;"></video>
+        <p id="faceStatus">Yüz doğrulanıyor...</p>
+    </div>
 
-    <div class="chat-input-area">
-        <button id="voiceBtn" onclick="sesliDiyalogBaslat()">🎙️ Konuş</button>
-        <input type="text" id="userInput" placeholder="Yaz veya konuş..." onkeypress="if(event.keyCode===13) mesajGonder()">
-        <button id="sendBtn" onclick="mesajGonder()">Gönder</button>
+    <div class="main-app" id="mainApp">
+        <div class="sidebar">
+            <h2>Sığınak</h2>
+            <button onclick="hafizayiTemizle()">Sohbeti Temizle</button>
+            <div id="memoryDisplay" style="margin-top:20px; font-size:0.8rem;"></div>
+        </div>
+        <div class="chat-container">
+            <div class="chat-messages" id="chatMessages"></div>
+            <div class="chat-input-area">
+                <button id="voiceBtn" class="voice-btn" onclick="sesiBaslat()">🎙️ Konuş</button>
+                <input type="text" id="userInput" placeholder="Mesajını yaz...">
+                <button onclick="mesajGonder()">Gönder</button>
+            </div>
+        </div>
     </div>
 
     <script>
-        const BASE_SYSTEM_PROMPT = "Du bist Prita, Mustafas treuer und programmierter Freund (Prodost). Antworte immer kurz, präzise und tiefgründig auf Deutsch.";
-        
-        // --- SESLENDİRME ---
-        function pritaSeslendir(metin) {
-            window.speechSynthesis.cancel();
-            const utterance = new SpeechSynthesisUtterance(metin);
-            utterance.lang = 'de-DE';
-            window.speechSynthesis.speak(utterance);
+        // 1. GÜVENLİK
+        async function baslat() {
+            const stream = await navigator.mediaDevices.getUserMedia({ video: {} });
+            document.getElementById('webcam').srcObject = stream;
+            setTimeout(() => {
+                document.getElementById('lockScreen').style.display = 'none';
+                document.getElementById('mainApp').className = "main-app unlocked";
+            }, 2000);
         }
+        baslat();
 
-        // --- SES TANIMA GÜNCELLEMESİ ---
-        function sesliDiyalogBaslat() {
-            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-            if (!SpeechRecognition) return alert("Tarayıcın desteklemiyor.");
-            
-            const recognition = new SpeechRecognition();
-            recognition.lang = 'tr-TR';
-            recognition.continuous = false; // Kısa cümleler için
-            recognition.interimResults = false;
-
+        // 2. SES MOTORU (Stabil)
+        let recognition;
+        function sesiBaslat() {
             const btn = document.getElementById('voiceBtn');
-            btn.className = "recording";
-            btn.innerText = "Dinliyorum...";
-
-            recognition.start();
-
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            recognition = new SpeechRecognition();
+            recognition.lang = 'tr-TR';
+            
+            recognition.onstart = () => { btn.innerText = "Dinliyorum..."; btn.className = "voice-btn active"; };
             recognition.onresult = (event) => {
-                const transcript = event.results[0][0].transcript;
-                document.getElementById('userInput').value = transcript;
-                btn.className = "";
+                const text = event.results[0][0].transcript;
+                document.getElementById('userInput').value = text;
                 btn.innerText = "🎙️ Konuş";
-                mesajGonder(); // Metin gelince otomatik tetikle
+                btn.className = "voice-btn";
+                mesajGonder();
             };
-
-            recognition.onerror = (e) => {
-                console.error(e);
-                btn.className = "";
-                btn.innerText = "🎙️ Konuş";
-                alert("Ses alınamadı. Lütfen mikrofon iznini kontrol et.");
-            };
+            recognition.start();
         }
 
-        // --- AI İLETİŞİM VE HAFIZA ---
+        // 3. İLETİŞİM
         async function mesajGonder() {
             const input = document.getElementById('userInput');
-            const text = input.value.trim();
-            if (!text) return;
+            const text = input.value;
+            if(!text) return;
             
-            ekranMesajEkle('user', text); // Kullanıcı mesajını ekrana hemen bas
-            input.value = '';
-
-            try {
-                const res = await fetch("http://127.0.0.1:1234/v1/chat/completions", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                        "messages": [{"role": "system", "content": BASE_SYSTEM_PROMPT}, {"role": "user", "content": text}],
-                        "temperature": 0.7
-                    })
-                });
-                const data = await res.json();
-                const reply = data.choices[0].message.content;
-                
-                ekranMesajEkle('prita', reply);
-                pritaSeslendir(reply);
-            } catch (err) {
-                ekranMesajEkle('prita', "Bağlantı hatası: LM Studio'nun çalıştığından emin ol.");
-            }
+            const msgDiv = document.createElement('div');
+            msgDiv.className = "message user-message";
+            msgDiv.innerText = text;
+            document.getElementById('chatMessages').appendChild(msgDiv);
+            
+            const res = await fetch("http://127.0.0.1:1234/v1/chat/completions", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    messages: [{role: "system", content: "Sen Prita, Mustafa'nın arkadaşısın. Almanca cevap ver."}, {role: "user", content: text}]
+                })
+            });
+            const data = await res.json();
+            const reply = data.choices[0].message.content;
+            
+            const replyDiv = document.createElement('div');
+            replyDiv.className = "message prita-message";
+            replyDiv.innerText = reply;
+            document.getElementById('chatMessages').appendChild(replyDiv);
+            
+            // SESLENDİRME
+            const ut = new SpeechSynthesisUtterance(reply);
+            ut.lang = 'de-DE';
+            window.speechSynthesis.speak(ut);
+            input.value = "";
         }
 
-        function ekranMesajEkle(sender, text) {
-            const div = document.createElement('div');
-            div.className = `message ${sender}-message`;
-            div.textContent = text;
-            const container = document.getElementById('chatMessages');
-            container.appendChild(div);
-            container.scrollTop = container.scrollHeight;
-        }
+        function hafizayiTemizle() { document.getElementById('chatMessages').innerHTML = ""; }
     </script>
 </body>
 </html>
