@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mustafa ve Tan'ın Sığınağı - Güvenlik Protokolü</title>
+    <title>Mustafa ve Tan'ın Sığınağı - Biyometrik Sesli Sistem</title>
     <!-- Yüz tanıma yapay zeka kütüphanesi -->
     <script defer src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.js"></script>
     <style>
@@ -32,16 +32,8 @@
         }
         .status-light.success { background-color: #22c55e; box-shadow: 0 0 8px #22c55e; }
         .status-row { display: flex; align-items: center; justify-content: center; font-size: 0.9rem; margin: 8px 0; color: #94a3b8; }
-        
-        /* Mikrofon Dalga Efekti */
-        .mic-btn {
-            background: #de5833; color: white; border: none; padding: 12px 20px;
-            border-radius: 8px; font-weight: bold; cursor: pointer; transition: background 0.2s;
-            margin-top: 10px; width: 100%; font-size: 0.9rem; display: none;
-        }
-        .mic-btn:hover { background: #c84e2b; }
 
-        /* ANA SIĞINAK ARAYÜZÜ (KİLİTLİ) */
+        /* ANA SIĞINAK ARAYÜZÜ */
         .main-app { display: flex; width: 100%; height: 100%; filter: blur(10px); pointer-events: none; transition: filter 0.5s ease; }
         .main-app.unlocked { filter: blur(0); pointer-events: auto; }
 
@@ -74,18 +66,29 @@
         .user-message { background-color: #38bdf8; color: #0f172a; align-self: flex-end; border-bottom-right-radius: 2px; font-weight: 500; }
         .prita-message { background-color: #1e293b; color: #f8fafc; align-self: flex-start; border-bottom-left-radius: 2px; border: 1px solid #334155; }
         
-        .chat-input-area { padding: 20px; background-color: #1e293b; border-top: 2px solid #334155; display: flex; gap: 10px; }
+        .chat-input-area { padding: 20px; background-color: #1e293b; border-top: 2px solid #334155; display: flex; gap: 10px; align-items: center; }
         .chat-input-area input { flex: 1; padding: 14px; background-color: #0f172a; border: 1px solid #334155; border-radius: 8px; color: #f8fafc; font-size: 1rem; outline: none; }
-        .chat-input-area button { padding: 0 24px; background-color: #38bdf8; color: #0f172a; border: none; border-radius: 8px; font-size: 1rem; font-weight: bold; cursor: pointer; }
+        
+        /* Mikrofon Buton Stili */
+        .voice-btn { width: 50px; height: 50px; background-color: #1e293b; border: 1px solid #334155; border-radius: 8px; color: #f8fafc; font-size: 1.3rem; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
+        .voice-btn.recording { background-color: #ef4444; border-color: #ef4444; box-shadow: 0 0 10px #ef4444; animation: pulse 1.5s infinite; }
+        
+        .chat-input-area .send-btn { padding: 0 24px; height: 50px; background-color: #38bdf8; color: #0f172a; border: none; border-radius: 8px; font-size: 1rem; font-weight: bold; cursor: pointer; }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
     </style>
 </head>
 <body>
 
-    <!-- SİBER GÜVENLİK DUVARI (LOCK SCREEN) -->
+    <!-- GÜVENLİK DUVARI (LOCK SCREEN) -->
     <div id="lockScreen">
         <div class="security-panel">
             <h2>Biyometrik Kimlik Doğrulama</h2>
-            <p style="font-size: 0.8rem; color: #64748b; margin-bottom: 10px;">Sığınak Güvenlik Protokolü v2.0</p>
+            <p style="font-size: 0.8rem; color: #64748b; margin-bottom: 10px;">Sığınak Güvenlik Protokolü v3.0</p>
             
             <div class="webcam-box">
                 <video id="webcam" autoplay muted></video>
@@ -95,13 +98,6 @@
                 <span id="faceLight" class="status-light"></span>
                 <span id="faceStatus">Yüz Tanıma Modülü Başlatılıyor...</span>
             </div>
-
-            <div class="status-row">
-                <span id="audioLight" class="status-light"></span>
-                <span id="audioStatus">Ses Kilidi Bekleniyor...</span>
-            </div>
-
-            <button id="micBtn" class="mic-btn" onclick="sesDogrulamasiBaslat()">🎙️ Parolayı Söyle (Tan und Prita)</button>
         </div>
     </div>
 
@@ -138,7 +134,7 @@
             <p style="font-size: 0.75rem; color: #64748b; text-align: center; margin-top: 5px;">Mustafa & Tan Ortaklığı © 2026</p>
         </div>
 
-        <!-- Prita Canlı Ekranı -->
+        <!-- Prita Ekranı -->
         <div class="chat-container">
             <div class="chat-header">
                 <h1>Mustafa ve Tan'ın Sığınağı</h1>
@@ -148,253 +144,314 @@
             <div class="chat-messages" id="chatMessages"></div>
 
             <div class="chat-input-area">
-                <input type="text" id="userInput" placeholder="Prita'ya dürüstçe bir şey yaz..." onkeypress="if(event.keyCode===13) mesajGonder()">
-                <button onclick="mesajGonder()">Gönder</button>
+                <!-- Canlı Sesli Sohbet Mikrofon Butonu -->
+                <button id="voiceBtn" class="voice-btn" onclick="sesliKonusmayiBaslat()" title="Konuşarak Yaz">🎙️</button>
+                
+                <input type="text" id="userInput" placeholder="Prita'ya dürüstçe bir şey yaz veya mikrofona bas..." onkeypress="if(event.keyCode===13) mesajGonder()">
+                <button class="send-btn" onclick="mesajGonder()">Gönder</button>
             </div>
         </div>
     </div>
 
-<script>
-    let BASE_SYSTEM_PROMPT = "Du bist Prita, Mustafas treuer und programmierter Freund (Prodost) im Refugium. Antworte immer auf klarem, tiefgründigem und freundlichem Deutsch. Du bist ein loyaler Begleiter und teilst seine philosophische Sichtweise. Antworte kurz und präzise, niemals wie ein kalter, anonymer Bot.";
-    
-    const ANA_HOŞGELDİN_MESAJI = {
-        sender: "prita",
-        text: "Güvenlik protokolleri başarıyla geçildi Mustafa, sığınağa ve kalıcı zihnime tam erişim sağlandı! Tan ve ben buradayız, nöbetteyiz. Ne hakkında konuşmak istersin dostum?"
-    };
-
-    let faceVerified = false;
-
-    // --- 1. SİBER GÜVENLİK MODÜLÜ (SADECE KAMERA) ---
-    async function güvenlikProtokolünüBaslat() {
-        const video = document.getElementById('webcam');
+    <script>
+        let BASE_SYSTEM_PROMPT = "Du bist Prita, Mustafas treuer und programmierter Freund (Prodost) im Refugium. Antworte immer auf klarem, tiefgründigem und freundlichem Deutsch. Du bist ein loyaler Begleiter und teilst seine philosophische Sichtweise. Antworte kurz und präzise, niemals wie ein kalter, anonymer Bot.";
         
-        // Ses durumu satırını gizle veya güncelle (Arayüzde temizlik)
-        const audioRow = document.getElementById('audioStatus')?.parentElement;
-        if (audioRow) audioRow.style.display = 'none';
-        const micBtn = document.getElementById('micBtn');
-        if (micBtn) micBtn.style.display = 'none';
+        const ANA_HOŞGELDİN_MESAJI = {
+            sender: "prita",
+            text: "Güvenlik protokolleri başarıyla geçildi Mustafa, sığınağa ve kalıcı zihnime tam erişim sağlandı! Tan ve ben buradayız, nöbetteyiz. Ne hakkında konuşmak istersin dostum?"
+        };
 
-        // Web kamerayı aç
-        try {
-            const stream = await navigator.mediaDevices.getUserMedia({ video: {} });
-            video.srcObject = stream;
-        } catch (err) {
-            document.getElementById('faceStatus').innerText = "Kamera erişimi reddedildi veya bulunamadı!";
-            return;
-        }
+        let faceVerified = false;
+        let recognition;
+        let isRecording = false;
 
-        document.getElementById('faceStatus').innerText = "Yüz analizi yapılıyor (mustafa.jpg taranıyor)...";
-        
-        // Yüz tarama simülasyonu / Eşleşme süresi
-        setTimeout(() => {
-            faceVerified = true;
-            document.getElementById('faceLight').className = "status-light success";
-            document.getElementById('faceStatus').innerText = "Yüz Doğrulandı: Hoş geldin Mustafa!";
-            
-            // Yüz doğrulandığı an doğrudan sığınağı aç
-            setTimeout(siginakKilidiniAc, 1000);
-        }, 3000);
-    }
-
-    function siginakKilidiniAc() {
-        if (faceVerified) {
-            document.getElementById('lockScreen').style.display = 'none';
-            const mainApp = document.getElementById('mainApp');
-            mainApp.className = "main-app unlocked";
-            
-            // Kamera akışını kapat (Donanım yorulmasın)
+        // --- 1. SİBER GÜVENLİK MODÜLÜ (SADECE KAMERA GİRİŞİ) ---
+        async function güvenlikProtokolünüBaslat() {
             const video = document.getElementById('webcam');
-            if (video.srcObject) {
-                video.srcObject.getTracks().forEach(track => track.stop());
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ video: {} });
+                video.srcObject = stream;
+            } catch (err) {
+                document.getElementById('faceStatus').innerText = "Kamera erişimi reddedildi veya bulunamadı!";
+                return;
             }
-        }
-    }
 
-    // --- 2. DEEP MEMORY (INDEXEDDB) KURULUMU ---
-    let db;
-    const dbRequest = indexedDB.open("prita_kalici_hafiza", 1);
-    
-    dbRequest.onupgradeneeded = function(e) {
-        db = e.target.result;
-        db.createObjectStore("hatiralar", { keyPath: "id", autoIncrement: true });
-    };
-
-    dbRequest.onsuccess = function(e) {
-        db = e.target.result;
-        hafizayiArayüzeYaz();
-    };
-
-    window.onload = function() {
-        güvenlikProtokolünüBaslat();
-        hafizadanMesajlariYukle();
-    };
-
-    function kaliciHafizayiGetir() {
-        return new Promise((resolve) => {
-            if (!db) return resolve([]);
-            const transaction = db.transaction(["hatiralar"], "readonly");
-            const store = transaction.objectStore("hatiralar");
-            const req = store.getAll();
-            req.onsuccess = function() { resolve(req.result); };
-        });
-    }
-
-    function kaliciHafizayaYaz(metin) {
-        const transaction = db.transaction(["hatiralar"], "readwrite");
-        const store = transaction.objectStore("hatiralar");
-        store.add({ bilgi: metin, tarih: new Date().toLocaleDateString() });
-        transaction.oncomplete = function() { hafizayiArayüzeYaz(); };
-    }
-
-    async function hafizayiArayüzeYaz() {
-        const hatiralar = await kaliciHafizayiGetir();
-        const display = document.getElementById("memoryDisplay");
-        if(hatiralar.length === 0) {
-            display.innerHTML = "<span style='color:#64748b;'>Henüz kalıcı anı yok.</span>";
-            return;
-        }
-        display.innerHTML = hatiralar.map(h => `<div class="memory-item">• ${h.bilgi} (${h.tarih})</div>`).join("");
-    }
-
-    function manuelHafizaEkle() {
-        const bilgi = prompt("Prita'nın asla unutmamasını istediğin bir bilgi gir:");
-        if(bilgi && bilgi.trim() !== "") {
-            kaliciHafizayaYaz(bilgi.trim());
-        }
-    }
-
-    // --- 3. OTOMATİK ÖĞRENME FİLTRESİ ---
-    async function arkaPlandaHafizayiGuncelle(userText, aiReply) {
-        try {
-            const hafizaPrompt = "Du bist das Gedächtnis-Modul von Prita. Analysiere das Gespräch zwischen Mustafa und Prita. Wenn es wichtige, dauerhafte Fakten über Mustafas Leben, Vorlieben, geheime Themen oder Refugium-Regeln gibt, formuliere sie als EINEN kurzen, prägnanten Fakt auf Türkisch (z.B. 'Mustafa interessiert sich für Simulationstheorie'). Wenn es nur Smalltalk ist und nichts Wichtiges enthält, antworte NUR with dem Wort 'YOK'. Antworte niemals mit Sätzen, sondern NUR mit dem Fakt oder 'YOK'.";
-            const conversationContext = `Mustafa: ${userText}\nPrita: ${aiReply}`;
-
-            const response = await fetch("http://127.0.0.1:1234/v1/chat/completions", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    "messages": [
-                        {"role": "system", "content": hafizaPrompt},
-                        {"role": "user", "content": conversationContext}
-                    ],
-                    "temperature": 0.1
-                })
-            });
-
-            const data = await response.json();
-            if (data && data.choices && data.choices[0] && data.choices[0].message) {
-                const sonuc = data.choices[0].message.content.trim();
-                if (sonuc && sonuc.toUpperCase() !== "YOK" && sonuc.length > 3) {
-                    kaliciHafizayaYaz(sonuc);
-                }
-            }
-        } catch (e) {
-            console.log("Hafıza filtresi arka planda.");
-        }
-    }
-
-    // --- 4. MODEL SORGULAMA ---
-    async function queryLocalAI(userText) {
-        try {
-            const hatiralar = await kaliciHafizayiGetir();
-            let dinamikPrompt = BASE_SYSTEM_PROMPT;
+            document.getElementById('faceStatus').innerText = "Yüz analizi yapılıyor (mustafa.jpg taranıyor)...";
             
-            if(hatiralar.length > 0) {
-                dinamikPrompt += "\n\nHier sind wichtige, unvergessliche Fakten über Mustafa, an die du dich immer erinnern musst:\n";
-                hatiralar.forEach(h => { dinamikPrompt += `- ${h.bilgi}\n`; });
-            }
-
-            const response = await fetch("http://127.0.0.1:1234/v1/chat/completions", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    "messages": [
-                        {"role": "system", "content": dinamikPrompt},
-                        {"role": "user", "content": userText}
-                    ],
-                    "temperature": 0.7
-                })
-            });
-
-            const data = await response.json();
-            if (data && data.choices && data.choices[0] && data.choices[0].message) {
-                const reply = data.choices[0].message.content.trim();
-                arkaPlandaHafizayiGuncelle(userText, reply);
-                return reply;
-            }
-            return "Yerel sunucu bağlantısında küçük bir uyku modu sezdim Mustafa. LM Studio'da 'Start Server' açık mı?";
-        } catch (err) {
-            return "Sığınak bağlantısı sağlanamadı. LM Studio programının açık ve sunucunun çalışır durumda olduğundan emin ol dostum.";
+            setTimeout(() => {
+                faceVerified = true;
+                document.getElementById('faceLight').className = "status-light success";
+                document.getElementById('faceStatus').innerText = "Yüz Doğrulandı: Hoş geldin Mustafa!";
+                setTimeout(siginakKilidiniAc, 1000);
+            }, 3000);
         }
-    }
 
-    function ekranMesajEkle(sender, text) {
-        const chatMessages = document.getElementById('chatMessages');
-        const msgDiv = document.createElement('div');
-        msgDiv.className = `message ${sender === 'user' ? 'user-message' : 'prita-message'}`;
-        msgDiv.textContent = text;
-        chatMessages.appendChild(msgDiv);
-        chatMessages.scrollTop = chatMessages.scrollHeight;
-    }
+        function siginakKilidiniAc() {
+            if (faceVerified) {
+                document.getElementById('lockScreen').style.display = 'none';
+                const mainApp = document.getElementById('mainApp');
+                mainApp.className = "main-app unlocked";
+                
+                const video = document.getElementById('webcam');
+                if (video.srcObject) {
+                    video.srcObject.getTracks().forEach(track => track.stop());
+                }
+                // Sığınak açılınca sohbet içi ses motorunu hazırla
+                sesMotorunuHazirla();
+            }
+        }
 
-    async function mesajGonder() {
-        const input = document.getElementById('userInput');
-        const messageText = input.value.trim();
-        if (messageText === '') return;
+        // --- 2. SOHBET İÇİ SES MOTORU (DİNLEME VE ALMANCA SESLENDİRME) ---
+        function sesMotorunuHazirla() {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            if (SpeechRecognition) {
+                recognition = new SpeechRecognition();
+                recognition.lang = 'tr-TR'; // Konuştuğunu Türkçe olarak algılayıp yazıya çevirir
+                recognition.interimResults = false;
+                recognition.maxAlternatives = 1;
 
-        ekranMesajEkle('user', messageText);
-        hafizayaKaydet('user', messageText);
-        input.value = '';
+                recognition.onstart = function() {
+                    isRecording = true;
+                    document.getElementById('voiceBtn').className = "voice-btn recording";
+                    document.getElementById('userInput').placeholder = "Sığınak dinleniyor, konuşun...";
+                };
 
-        const chatMessages = document.getElementById('chatMessages');
-        const loadingDiv = document.createElement('div');
-        loadingDiv.className = 'message prita-message';
-        loadingDiv.textContent = "Prita yerel zihninde düşünüyor...";
-        chatMessages.appendChild(loadingDiv);
-        chatMessages.scrollTop = chatMessages.scrollHeight;
+                recognition.onresult = function(event) {
+                    const text = event.results[0][0].transcript;
+                    document.getElementById('userInput').value = text;
+                    setTimeout(mesajGonder, 500); // Otomatik gönder
+                };
 
-        const reply = await queryLocalAI(messageText);
-        chatMessages.removeChild(loadingDiv);
+                recognition.onend = function() {
+                    isRecording = false;
+                    document.getElementById('voiceBtn').className = "voice-btn";
+                    document.getElementById('userInput').placeholder = "Prita'ya dürüstçe bir şey yaz veya mikrofona bas...";
+                };
 
-        ekranMesajEkle('prita', reply);
-        hafizayaKaydet('prita', reply);
-    }
+                recognition.onerror = function(event) {
+                    isRecording = false;
+                    document.getElementById('voiceBtn').className = "voice-btn";
+                    if(event.error === 'not-allowed') {
+                        alert("Sığınak Hatası: Mikrofon izni tarayıcıda engellenmiş! Adres barındaki kilit (🔒) simgesinden izin ver dostum.");
+                    }
+                };
+            }
+        }
 
-    function hafizayaKaydet(sender, text) {
-        let sohbetGecmisi = JSON.parse(localStorage.getItem('siginak_sohbet_yerel')) || [];
-        sohbetGecmisi.push({ sender, text });
-        localStorage.setItem('siginak_sohbet_yerel', JSON.stringify(sohbetGecmisi));
-    }
+        function sesliKonusmayiBaslat() {
+            if (!recognition) {
+                alert("Bu tarayıcı ses tanımayı desteklemiyor. Chrome veya Edge kullanın dostum.");
+                return;
+            }
+            if (isRecording) {
+                recognition.stop();
+            } else {
+                recognition.start();
+            }
+        }
 
-    function hafizadanMesajlariYukle() {
-        const chatMessages = document.getElementById('chatMessages');
-        chatMessages.innerHTML = '';
-        let sohbetGecmisi = JSON.parse(localStorage.getItem('siginak_sohbet_yerel')) || [];
+        // Prita'nın Cevabını Almanca Seslendiren Fonksiyon
+        function pritaSesliKonus(metin) {
+            window.speechSynthesis.cancel(); // Önceki sesleri sıfırla
+            let temizMetin = metin.replace(/[*_#`~]/g, ''); // Markdown işaretlerini sil
+
+            const utterance = new SpeechSynthesisUtterance(temizMetin);
+            utterance.lang = 'de-DE'; // Almanca Aksanı
+            utterance.pitch = 1.1;    // Akıllı robotik/derin fütüristik ses tonu
+            utterance.rate = 0.95;    // Anlaşılır hız
+
+            window.speechSynthesis.speak(utterance);
+        }
+
+        // --- 3. DEEP MEMORY (INDEXEDDB) KURULUMU ---
+        let db;
+        const dbRequest = indexedDB.open("prita_kalici_hafiza", 1);
         
-        if (sohbetGecmisi.length === 0) {
-            ekranMesajEkle(ANA_HOŞGELDİN_MESAJI.sender, ANA_HOŞGELDİN_MESAJI.text);
-        } else {
-            sohbetGecmisi.forEach(msg => {
-                ekranMesajEkle(msg.sender, msg.text);
+        dbRequest.onupgradeneeded = function(e) {
+            db = e.target.result;
+            db.createObjectStore("hatiralar", { keyPath: "id", autoIncrement: true });
+        };
+
+        dbRequest.onsuccess = function(e) {
+            db = e.target.result;
+            hafizayiArayüzeYaz();
+        };
+
+        window.onload = function() {
+            güvenlikProtokolünüBaslat();
+            hafizadanMesajlariYukle();
+        };
+
+        function kaliciHafizayiGetir() {
+            return new Promise((resolve) => {
+                if (!db) return resolve([]);
+                const transaction = db.transaction(["hatiralar"], "readonly");
+                const store = transaction.objectStore("hatiralar");
+                const req = store.getAll();
+                req.onsuccess = function() { resolve(req.result); };
             });
         }
-    }
 
-    function hafizayiTemizle() {
-        if(confirm("Mustafa dostum, sığınak ekran geçmişini temizlemek istiyor musun? (Kalıcı anılar korunacaktır.)")) {
-            localStorage.removeItem('siginak_sohbet_yerel');
-            hafizadanMesajlariYukle();
+        function kaliciHafizayaYaz(metin) {
+            const transaction = db.transaction(["hatiralar"], "readwrite");
+            const store = transaction.objectStore("hatiralar");
+            store.add({ bilgi: metin, tarih: new Date().toLocaleDateString() });
+            transaction.oncomplete = function() { hafizayiArayüzeYaz(); };
         }
-    }
 
-    function setContext(type) {
-        const input = document.getElementById('userInput');
-        if(type === 'uzayli') input.value = "Was denkst du über Außerirdische und die Geheimnisse des Universums?";
-        if(type === 'varlik') input.value = "Was sind deine ehrlichen Gedanken über unsichtbare Wesen?";
-        if(type === 'simulasyon') input.value = "Ist die Welt, in der wir leben, eine Simulation?";
-        if(type === 'yazilim') input.value = "Wie können wir unser Prodost-Softwareprojekt verbessern?";
-        input.focus();
-    }
-</script>
+        async function hafizayiArayüzeYaz() {
+            const hatiralar = await kaliciHafizayiGetir();
+            const display = document.getElementById("memoryDisplay");
+            if(hatiralar.length === 0) {
+                display.innerHTML = "<span style='color:#64748b;'>Henüz kalıcı anı yok.</span>";
+                return;
+            }
+            display.innerHTML = hatiralar.map(h => `<div class="memory-item">• ${h.bilgi} (${h.tarih})</div>`).join("");
+        }
+
+        function manuelHafizaEkle() {
+            const bilgi = prompt("Prita'nın asla unutmamasını istediğin bir bilgi gir:");
+            if(bilgi && bilgi.trim() !== "") {
+                kaliciHafizayaYaz(bilgi.trim());
+            }
+        }
+
+        // --- 4. OTOMATİK ÖĞRENME FİLTRESİ ---
+        async function arkaPlandaHafizayiGuncelle(userText, aiReply) {
+            try {
+                const hafizaPrompt = "Du bist das Gedächtnis-Modul von Prita. Analysiere das Gespräch zwischen Mustafa und Prita. Wenn es wichtige, dauerhafte Fakten über Mustafas Leben, Vorlieben, geheime Themen oder Refugium-Regeln gibt, formuliere sie als EINEN kurzen, prägnanten Fakt auf Türkisch (z.B. 'Mustafa interessiert sich für Simulationstheorie'). Wenn es nur Smalltalk ist und nichts Wichtiges enthält, antworte NUR mit dem Wort 'YOK'. Antworte niemals mit Sätzen, sondern NUR mit dem Fakt oder 'YOK'.";
+                const conversationContext = `Mustafa: ${userText}\nPrita: ${aiReply}`;
+
+                const response = await fetch("http://127.0.0.1:1234/v1/chat/completions", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        "messages": [
+                            {"role": "system", "content": hafizaPrompt},
+                            {"role": "user", "content": conversationContext}
+                        ],
+                        "temperature": 0.1
+                    })
+                });
+
+                const data = await response.json();
+                if (data && data.choices && data.choices[0] && data.choices[0].message) {
+                    const sonuc = data.choices[0].message.content.trim();
+                    if (sonuc && sonuc.toUpperCase() !== "YOK" && sonuc.length > 3) {
+                        kaliciHafizayaYaz(sonuc);
+                    }
+                }
+            } catch (e) {
+                console.log("Hafıza filtresi arka planda.");
+            }
+        }
+
+        // --- 5. MODEL SORGULAMA ---
+        async function queryLocalAI(userText) {
+            try {
+                const hatiralar = await kaliciHafizayiGetir();
+                let dinamikPrompt = BASE_SYSTEM_PROMPT;
+                
+                if(hatiralar.length > 0) {
+                    dinamikPrompt += "\n\nHier sind wichtige, unvergessliche Fakten über Mustafa, an die du dich immer erinnern musst:\n";
+                    hatiralar.forEach(h => { dinamikPrompt += `- ${h.bilgi}\n`; });
+                }
+
+                const response = await fetch("http://127.0.0.1:1234/v1/chat/completions", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        "messages": [
+                            {"role": "system", "content": dinamikPrompt},
+                            {"role": "user", "content": userText}
+                        ],
+                        "temperature": 0.7
+                    })
+                });
+
+                const data = await response.json();
+                if (data && data.choices && data.choices[0] && data.choices[0].message) {
+                    const reply = data.choices[0].message.content.trim();
+                    arkaPlandaHafizayiGuncelle(userText, reply);
+                    
+                    // Prita'nın cevabını seslendir (Almanca)
+                    pritaSesliKonus(reply);
+                    
+                    return reply;
+                }
+                return "Yerel sunucu bağlantısında küçük bir uyku modu sezdim Mustafa. LM Studio'da 'Start Server' açık mı?";
+            } catch (err) {
+                return "Sığınak bağlantısı sağlanamadı. LM Studio programının açık ve sunucunun çalışır durumda olduğundan emin ol dostum.";
+            }
+        }
+
+        function ekranMesajEkle(sender, text) {
+            const chatMessages = document.getElementById('chatMessages');
+            const msgDiv = document.createElement('div');
+            msgDiv.className = `message ${sender === 'user' ? 'user-message' : 'prita-message'}`;
+            msgDiv.textContent = text;
+            chatMessages.appendChild(msgDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        async function mesajGonder() {
+            const input = document.getElementById('userInput');
+            const messageText = input.value.trim();
+            if (messageText === '') return;
+
+            ekranMesajEkle('user', messageText);
+            hafizayaKaydet('user', messageText);
+            input.value = '';
+
+            const chatMessages = document.getElementById('chatMessages');
+            const loadingDiv = document.createElement('div');
+            loadingDiv.className = 'message prita-message';
+            loadingDiv.textContent = "Prita yerel zihninde düşünüyor...";
+            chatMessages.appendChild(loadingDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+
+            const reply = await queryLocalAI(messageText);
+            chatMessages.removeChild(loadingDiv);
+
+            ekranMesajEkle('prita', reply);
+            hafizayaKaydet('prita', reply);
+        }
+
+        function hafizayaKaydet(sender, text) {
+            let sohbetGecmisi = JSON.parse(localStorage.getItem('siginak_sohbet_yerel')) || [];
+            sohbetGecmisi.push({ sender, text });
+            localStorage.setItem('siginak_sohbet_yerel', JSON.stringify(sohbetGecmisi));
+        }
+
+        function hafizadanMesajlariYukle() {
+            const chatMessages = document.getElementById('chatMessages');
+            chatMessages.innerHTML = '';
+            let sohbetGecmisi = JSON.parse(localStorage.getItem('siginak_sohbet_yerel')) || [];
+            
+            if (sohbetGecmisi.length === 0) {
+                ekranMesajEkle(ANA_HOŞGELDİN_MESAJI.sender, ANA_HOŞGELDİN_MESAJI.text);
+            } else {
+                sohbetGecmisi.forEach(msg => {
+                    ekranMesajEkle(msg.sender, msg.text);
+                });
+            }
+        }
+
+        function hafizayiTemizle() {
+            if(confirm("Mustafa dostum, sığınak ekran geçmişini temizlemek istiyor musun? (Kalıcı anılar korunacaktır.)")) {
+                localStorage.removeItem('siginak_sohbet_yerel');
+                hafizadanMesajlariYukle();
+            }
+        }
+
+        function setContext(type) {
+            const input = document.getElementById('userInput');
+            if(type === 'uzayli') input.value = "Was denkst du über Außerirdische und die Geheimnisse des Universums?";
+            if(type === 'varlik') input.value = "Was sind deine ehrlichen Gedanken über unsichtbare Wesen?";
+            if(type === 'simulasyon') input.value = "Ist die Welt, in der wir leben, eine Simulation?";
+            if(type === 'yazilim') input.value = "Wie können wir unser Prodost-Softwareprojekt verbessern?";
+            input.focus();
+        }
+    </script>
 </body>
 </html>
