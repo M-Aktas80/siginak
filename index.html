@@ -92,12 +92,13 @@
                 const reader = res.body.getReader();
                 const decoder = new TextDecoder();
                 let fullReply = "";
-                let cumleBuffer = ""; // Cümle takibi için
+                let okunanKisim = ""; // Zaten seslendirilmiş kısımları takip eder
                 replyDiv.innerText = "";
 
                 while (true) {
                     const { done, value } = await reader.read();
                     if (done) break;
+                    
                     const chunk = decoder.decode(value, { stream: true });
                     const lines = chunk.split('\n');
                     for (const line of lines) {
@@ -105,19 +106,17 @@
                         try {
                             const json = JSON.parse(line);
                             if (json.message?.content) {
-                                const content = json.message.content;
-                                fullReply += content;
-                                cumleBuffer += content;
+                                fullReply += json.message.content;
                                 replyDiv.innerText = fullReply;
                                 chatDiv.scrollTop = chatDiv.scrollHeight;
 
-                                // Eğer cümle biterse anında seslendir
-                                if (/[.!?]/.test(content)) {
-                                    const temizMetin = cumleBuffer.replace(/[^a-zA-ZçÇğĞıİöÖşŞüÜ0-9.,!? ]/g, ' ');
-                                    const ut = new SpeechSynthesisUtterance(temizMetin);
+                                // Eğer bir cümle biterse (nokta, soru, ünlem)
+                                const yeniKisim = fullReply.slice(okunanKisim.length);
+                                if (/[.!?]/.test(yeniKisim)) {
+                                    const ut = new SpeechSynthesisUtterance(yeniKisim);
                                     ut.lang = 'tr-TR';
                                     window.speechSynthesis.speak(ut);
-                                    cumleBuffer = ""; // Buffer'ı temizle
+                                    okunanKisim = fullReply; // Artık burayı okuduk
                                 }
                             }
                         } catch(e) {}
