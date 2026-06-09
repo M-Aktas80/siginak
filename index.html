@@ -81,6 +81,7 @@
                 const reader = res.body.getReader();
                 const decoder = new TextDecoder();
                 let fullReply = "";
+                let sentenceBuffer = ""; // Cümleleri biriktirip seslendirmek için
                 replyDiv.innerText = "";
 
                 while (true) {
@@ -92,16 +93,23 @@
                         try {
                             const json = JSON.parse(line);
                             if (json.message?.content) {
-                                fullReply += json.message.content;
+                                const content = json.message.content;
+                                fullReply += content;
+                                sentenceBuffer += content;
                                 replyDiv.innerText = fullReply;
                                 chatDiv.scrollTop = chatDiv.scrollHeight;
+
+                                // Eğer bir cümle bittiyse (nokta, soru, ünlem) seslendir
+                                if (/[.!?]$/.test(content.trim())) {
+                                    const ut = new SpeechSynthesisUtterance(sentenceBuffer);
+                                    ut.lang = 'tr-TR';
+                                    window.speechSynthesis.speak(ut);
+                                    sentenceBuffer = ""; // Tamponu boşalt
+                                }
                             }
                         } catch(e) {}
                     });
                 }
-                const ut = new SpeechSynthesisUtterance(fullReply);
-                ut.lang = 'tr-TR';
-                window.speechSynthesis.speak(ut);
             } catch(err) {
                 replyDiv.innerText = "Bağlantı koptu dostum, tüneli ve Ollama'yı kontrol et.";
             }
