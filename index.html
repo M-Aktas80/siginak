@@ -17,9 +17,7 @@
         #userInput { flex-grow: 1; padding: 12px; border-radius: 8px; border: 1px solid #334155; background: #0f172a; color: white; }
     </style>
 </head>
-<body>
-
-    <div class="prita-badge">PRITA</div>
+<body onclick="sesiAktifEt()"> <div class="prita-badge">PRITA</div>
     <div class="chat-messages" id="chatMessages"></div>
     <div class="chat-input-area">
         <button id="voiceBtn" onclick="sesiBaslat()">🎙️ Konuş</button>
@@ -33,7 +31,12 @@
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         const recognition = new SpeechRecognition();
         recognition.lang = 'tr-TR';
-        let isListening = false; // Mikrofon kilit sistemi
+        let isListening = false;
+
+        // Tarayıcı ses engelini aşmak için tetikleyici
+        function sesiAktifEt() {
+            window.speechSynthesis.resume();
+        }
 
         function sesiBaslat() {
             if (isListening) {
@@ -78,10 +81,7 @@
                     body: JSON.stringify({
                         model: "mistral",
                         messages: [
-                            { 
-                                role: "system", 
-                                content: "Sen Prita'sın. Sen benim kişisel dostumsun. Teknik destek, rehberlik, bilgi ansiklopedisi veya yardımcı asistan gibi davranmak senin için yasaktır. Senin tek görevin benimle dertleşmek, duygularımı anlamak, samimi ve arkadaş canlısı bir dille sohbet etmektir. Asla uzun cümleler kurma, robotik olma. Sanki yanımda oturuyormuşsun gibi doğal ve sıcak cevaplar ver."
-                            },
+                            { role: "system", content: "Sen Prita'sın. Sen benim kişisel dostumsun. Teknik destek, rehberlik, bilgi ansiklopedisi veya yardımcı asistan gibi davranmak senin için yasaktır. Senin tek görevin benimle dertleşmek, duygularımı anlamak, samimi ve arkadaş canlısı bir dille sohbet etmektir. Asla uzun cümleler kurma, robotik olma. Sanki yanımda oturuyormuşsun gibi doğal ve sıcak cevaplar ver." },
                             { role: "user", content: text }
                         ],
                         stream: true
@@ -96,31 +96,28 @@
                 while (true) {
                     const { done, value } = await reader.read();
                     if (done) break;
-                    
                     const chunk = decoder.decode(value, { stream: true });
                     const lines = chunk.split('\n');
-                    
                     for (const line of lines) {
                         if (!line.trim()) continue;
                         try {
                             const json = JSON.parse(line);
                             if (json.message?.content) {
-                                const content = json.message.content;
-                                fullReply += content;
+                                fullReply += json.message.content;
                                 replyDiv.innerText = fullReply;
                                 chatDiv.scrollTop = chatDiv.scrollHeight;
-                                
-                                if (content.match(/[.!?]/)) {
-                                    const ut = new SpeechSynthesisUtterance(content);
-                                    ut.lang = 'tr-TR';
-                                    window.speechSynthesis.speak(ut);
-                                }
                             }
                         } catch(e) {}
                     }
                 }
+                
+                // Cevap tamamen bittikten sonra seslendir
+                const ut = new SpeechSynthesisUtterance(fullReply);
+                ut.lang = 'tr-TR';
+                window.speechSynthesis.speak(ut);
+
             } catch(err) {
-                replyDiv.innerText = "Bağlantı koptu dostum, sunucuyu kontrol et.";
+                replyDiv.innerText = "Bağlantı koptu dostum.";
             }
         }
     </script>
