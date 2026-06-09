@@ -28,43 +28,25 @@
     </div>
 
     <script>
-        const SERVER_URL = "https://tampa-fare-viewers-continuing.trycloudflare.com/v1/chat/completions";
-        const btn = document.getElementById('voiceBtn');
+        // BURAYI terminaldeki yeni linkinle güncelle!
+        const SERVER_URL = "https://permalink-allowed-broad-agreements.trycloudflare.com/api/chat";
         
-        // Ses motoru kurulumu
+        const btn = document.getElementById('voiceBtn');
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         const recognition = new SpeechRecognition();
         recognition.lang = 'tr-TR';
-        recognition.continuous = false; // Sürekli dinleme kapatıldı, hata payı düşürüldü
 
         function sesiBaslat() {
             btn.innerText = "Dinliyorum...";
             btn.classList.add('active');
-            try {
-                recognition.start();
-            } catch(e) {
-                recognition.stop();
-                setTimeout(() => recognition.start(), 500);
-            }
+            recognition.start();
         }
 
         recognition.onresult = (event) => {
-            const metin = event.results[0][0].transcript;
-            document.getElementById('userInput').value = metin;
+            document.getElementById('userInput').value = event.results[0][0].transcript;
             btn.innerText = "🎙️ Konuş";
             btn.classList.remove('active');
             mesajGonder();
-        };
-
-        // Hata durumunda otomatik reset
-        recognition.onerror = () => {
-            btn.innerText = "🎙️ Konuş";
-            btn.classList.remove('active');
-        };
-
-        recognition.onend = () => {
-            btn.innerText = "🎙️ Konuş";
-            btn.classList.remove('active');
         };
 
         async function mesajGonder() {
@@ -88,13 +70,15 @@
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({
-                        messages: [{role: "system", content: "Sen Prita, Mustafa'nın arkadaşısın. Cevaplarını Almanca ver."}, {role: "user", content: text}]
+                        model: "llama3", // Ollama model adın buraya yazılmalı
+                        messages: [{role: "user", content: text}],
+                        stream: false
                     })
                 });
                 const data = await res.json();
                 statusDiv.remove();
                 
-                const reply = data.choices[0].message.content;
+                const reply = data.message.content;
                 const replyDiv = document.createElement('div');
                 replyDiv.className = 'message prita-message';
                 replyDiv.innerText = reply;
@@ -104,7 +88,7 @@
                 ut.lang = 'de-DE';
                 window.speechSynthesis.speak(ut);
             } catch(err) {
-                statusDiv.innerText = "Sunucuya ulaşılamadı. LM Studio'yu kontrol et.";
+                statusDiv.innerText = "Sunucuya ulaşılamadı. Ollama'yı ve tüneli kontrol et.";
             }
         }
     </script>
