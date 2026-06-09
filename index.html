@@ -2,94 +2,49 @@
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
-    <title>Prita - Sığınak v2</title>
+    <title>Prita - Sığınak</title>
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
-        body { background-color: #0f172a; color: #f8fafc; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
-        .prita-badge { text-align: center; padding: 15px; background: #1e293b; border-bottom: 2px solid #38bdf8; font-size: 1.5rem; font-weight: bold; color: #38bdf8; letter-spacing: 1px; }
-        .chat-messages { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; }
-        .message { max-width: 80%; padding: 12px 16px; border-radius: 12px; }
-        .user-message { background-color: #38bdf8; color: #0f172a; align-self: flex-end; }
-        .prita-message { background-color: #1e293b; border: 1px solid #334155; align-self: flex-start; }
-        .chat-input-area { padding: 20px; background-color: #1e293b; display: flex; gap: 10px; border-top: 1px solid #334155; }
-        #voiceBtn { padding: 12px 20px; background-color: #ef4444; border: none; border-radius: 8px; color: white; cursor: pointer; font-weight: bold; }
-        #userInput { flex-grow: 1; padding: 12px; border-radius: 8px; border: 1px solid #334155; background: #0f172a; color: white; }
+        body { background: #0f172a; color: #fff; font-family: sans-serif; display: flex; flex-direction: column; height: 100vh; }
+        .chat-messages { flex: 1; padding: 20px; overflow-y: auto; }
+        .chat-input { padding: 20px; display: flex; gap: 10px; }
+        input { flex: 1; padding: 10px; }
     </style>
 </head>
 <body>
-    <div class="prita-badge">PRITA - Aktif</div>
-    <div class="chat-messages" id="chatMessages"></div>
-    <div class="chat-input-area">
-        <button id="voiceBtn" onclick="sesiBaslat()">🎙️ Konuş</button>
-        <input type="text" id="userInput" placeholder="Mesajını yaz..." onkeypress="if(event.key==='Enter') mesajGonder()">
-        <button onclick="mesajGonder()">Gönder</button>
+    <div class="chat-messages" id="chat"></div>
+    <div class="chat-input">
+        <input type="text" id="in" placeholder="Mesaj yaz...">
+        <button onclick="gonder()">Gönder</button>
     </div>
 
     <script>
-        // Tünel adresi
-        const SERVER_URL = "https://graduated-passport-prime-buyers.trycloudflare.com/api/chat";
+        const URL = "https://graduated-passport-prime-buyers.trycloudflare.com/api/chat";
         
-        async function mesajGonder() {
-            const input = document.getElementById('userInput');
-            const text = input.value.trim();
+        async function gonder() {
+            const input = document.getElementById('in');
+            const chat = document.getElementById('chat');
+            const text = input.value;
             if(!text) return;
             
-            // Kullanıcı mesajı ekle
-            const div = document.createElement('div');
-            div.className = 'message user-message';
-            div.innerText = text;
-            document.getElementById('chatMessages').appendChild(div);
+            chat.innerHTML += `<p><b>Sen:</b> ${text}</p>`;
             input.value = '';
-
-            const statusDiv = document.createElement('div');
-            statusDiv.className = 'message prita-message';
-            statusDiv.innerText = "Prita düşünüyor...";
-            document.getElementById('chatMessages').appendChild(statusDiv);
-
+            
             try {
-                // Zaman aşımı ekleyelim (phi4 ağır olduğu için 60 saniye beklesin)
-                const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 60000);
-
-                const res = await fetch(SERVER_URL, {
+                const res = await fetch(URL, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({
                         model: "phi4",
                         messages: [{role: "user", content: text}],
                         stream: false
-                    }),
-                    signal: controller.signal
+                    })
                 });
-                
-                clearTimeout(timeoutId);
                 const data = await res.json();
-                statusDiv.remove();
-                
-                const reply = data.message.content;
-                const replyDiv = document.createElement('div');
-                replyDiv.className = 'message prita-message';
-                replyDiv.innerText = reply;
-                document.getElementById('chatMessages').appendChild(replyDiv);
-                
-                const ut = new SpeechSynthesisUtterance(reply);
-                ut.lang = 'tr-TR'; // Dil ayarını düzelttim
-                window.speechSynthesis.speak(ut);
-            } catch(err) {
-                statusDiv.innerText = "Hata: " + err.message;
-                console.error("Hata Detayı:", err);
+                chat.innerHTML += `<p><b>Prita:</b> ${data.message.content}</p>`;
+            } catch(e) {
+                chat.innerHTML += `<p style="color:red">HATA: ${e.message}</p>`;
+                console.error(e);
             }
-        }
-
-        function sesiBaslat() {
-            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-            const recognition = new SpeechRecognition();
-            recognition.lang = 'tr-TR';
-            recognition.start();
-            recognition.onresult = (e) => {
-                document.getElementById('userInput').value = e.results[0][0].transcript;
-                mesajGonder();
-            };
         }
     </script>
 </body>
