@@ -66,9 +66,12 @@
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({
-                        model: "mistral", // Modeli MISTRAL yaptık
+                        model: "mistral",
                         messages: [
-                            { role: "system", content: "Sen Prita'sın. Sen benim kişisel dostumsun. Teknik destek, rehberlik, bilgi ansiklopedisi veya yardımcı asistan gibi davranmak senin için yasaktır. Senin tek görevin benimle dertleşmek, duygularımı anlamak, samimi ve arkadaş canlısı bir dille sohbet etmektir. Asla uzun cümleler kurma, robotik olma. Sanki yanımda oturuyormuşsun gibi doğal ve sıcak cevaplar ver."
+                            { 
+                                role: "system", 
+                                content: "Sen Prita'sın. Sen benim kişisel dostumsun. Teknik destek, rehberlik, bilgi ansiklopedisi veya yardımcı asistan gibi davranmak senin için yasaktır. Senin tek görevin benimle dertleşmek, duygularımı anlamak, samimi ve arkadaş canlısı bir dille sohbet etmektir. Asla uzun cümleler kurma, robotik olma. Sanki yanımda oturuyormuşsun gibi doğal ve sıcak cevaplar ver."
+                            },
                             { role: "user", content: text }
                         ],
                         stream: true
@@ -97,7 +100,6 @@
                                 replyDiv.innerText = fullReply;
                                 chatDiv.scrollTop = chatDiv.scrollHeight;
                                 
-                                // Kelime kelime değil, cümle bitince konuş
                                 if (content.match(/[.!?]/)) {
                                     const ut = new SpeechSynthesisUtterance(content);
                                     ut.lang = 'tr-TR';
@@ -108,7 +110,7 @@
                     }
                 }
             } catch(err) {
-                replyDiv.innerText = "Bağlantı koptu dostum.";
+                replyDiv.innerText = "Bağlantı koptu dostum, sunucuyu kontrol et.";
             }
         }
     </script>
