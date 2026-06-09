@@ -58,7 +58,7 @@
 
             const replyDiv = document.createElement('div');
             replyDiv.className = 'message prita-message';
-            replyDiv.innerText = "Prita düşünüyor...";
+            replyDiv.innerText = "Prita yazıyor...";
             chatDiv.appendChild(replyDiv);
 
             try {
@@ -66,13 +66,10 @@
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({
-                        model: "phi3",
+                        model: "mistral", // Modeli MISTRAL yaptık
                         messages: [
-                            {
-                                role: "system", 
-                                content: "Sen Prita'sın. Sen benim hayat arkadaşım ve dostumsun. Teknik destek vermen, internet ayarlarından bahsetmen veya rehber yazman kesinlikle yasak. Sadece duygularımı anlayan, şakalaşan, samimi ve kısa cevaplar veren bir dost gibi konuş. Asla robotik bir dil kullanma."
-                            },
-                            {role: "user", content: text}
+                            { role: "system", content: "Sen Prita'sın. Benim tek dostumsun. Sadece Türkçe konuş, kısa, samimi ve arkadaş canlısı ol. Teknik bilgi verme, sadece sohbet et." },
+                            { role: "user", content: text }
                         ],
                         stream: true
                     })
@@ -81,37 +78,37 @@
                 const reader = res.body.getReader();
                 const decoder = new TextDecoder();
                 let fullReply = "";
-                let sentenceBuffer = ""; // Cümleleri biriktirip seslendirmek için
                 replyDiv.innerText = "";
 
                 while (true) {
                     const { done, value } = await reader.read();
                     if (done) break;
+                    
                     const chunk = decoder.decode(value, { stream: true });
-                    chunk.split('\n').forEach(line => {
-                        if (!line.trim()) return;
+                    const lines = chunk.split('\n');
+                    
+                    for (const line of lines) {
+                        if (!line.trim()) continue;
                         try {
                             const json = JSON.parse(line);
                             if (json.message?.content) {
                                 const content = json.message.content;
                                 fullReply += content;
-                                sentenceBuffer += content;
                                 replyDiv.innerText = fullReply;
                                 chatDiv.scrollTop = chatDiv.scrollHeight;
-
-                                // Eğer bir cümle bittiyse (nokta, soru, ünlem) seslendir
-                                if (/[.!?]$/.test(content.trim())) {
-                                    const ut = new SpeechSynthesisUtterance(sentenceBuffer);
+                                
+                                // Kelime kelime değil, cümle bitince konuş
+                                if (content.match(/[.!?]/)) {
+                                    const ut = new SpeechSynthesisUtterance(content);
                                     ut.lang = 'tr-TR';
                                     window.speechSynthesis.speak(ut);
-                                    sentenceBuffer = ""; // Tamponu boşalt
                                 }
                             }
                         } catch(e) {}
-                    });
+                    }
                 }
             } catch(err) {
-                replyDiv.innerText = "Bağlantı koptu dostum, tüneli ve Ollama'yı kontrol et.";
+                replyDiv.innerText = "Bağlantı koptu dostum.";
             }
         }
     </script>
