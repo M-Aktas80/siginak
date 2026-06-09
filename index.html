@@ -33,17 +33,27 @@
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         const recognition = new SpeechRecognition();
         recognition.lang = 'tr-TR';
+        let isListening = false; // Mikrofon kilit sistemi
 
         function sesiBaslat() {
+            if (isListening) {
+                recognition.stop();
+                return;
+            }
+            isListening = true;
             btn.innerText = "Dinliyorum...";
             btn.classList.add('active');
             recognition.start();
         }
 
-        recognition.onresult = (event) => {
-            document.getElementById('userInput').value = event.results[0][0].transcript;
+        recognition.onend = () => {
+            isListening = false;
             btn.innerText = "🎙️ Konuş";
             btn.classList.remove('active');
+        };
+
+        recognition.onresult = (event) => {
+            document.getElementById('userInput').value = event.results[0][0].transcript;
             mesajGonder();
         };
 
