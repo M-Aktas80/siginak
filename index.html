@@ -92,7 +92,7 @@
                 const reader = res.body.getReader();
                 const decoder = new TextDecoder();
                 let fullReply = "";
-                let okunanKisim = ""; // Zaten seslendirilmiş kısımları takip eder
+                let okunanKisim = ""; 
                 replyDiv.innerText = "";
 
                 while (true) {
@@ -110,13 +110,17 @@
                                 replyDiv.innerText = fullReply;
                                 chatDiv.scrollTop = chatDiv.scrollHeight;
 
-                                // Eğer bir cümle biterse (nokta, soru, ünlem)
                                 const yeniKisim = fullReply.slice(okunanKisim.length);
                                 if (/[.!?]/.test(yeniKisim)) {
                                     const ut = new SpeechSynthesisUtterance(yeniKisim);
                                     ut.lang = 'tr-TR';
+                                    // Ses ayarları:
+                                    ut.rate = 1.05;    // Hafif daha hızlı ve enerjik
+                                    ut.pitch = 1.0;    // Doğal ton
+                                    ut.volume = 1.0;   // Maksimum ses seviyesi
+                                    
                                     window.speechSynthesis.speak(ut);
-                                    okunanKisim = fullReply; // Artık burayı okuduk
+                                    okunanKisim = fullReply; 
                                 }
                             }
                         } catch(e) {}
