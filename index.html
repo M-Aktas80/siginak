@@ -68,7 +68,10 @@
                     body: JSON.stringify({
                         model: "tinyllama",
                         messages: [
-                            {role: "system", content: "Sen Prita'sın. Sen benim programlanmış dostumsun. Samimi, kısa ve arkadaş canlısı cevaplar ver."},
+                            {
+                                role: "system", 
+                                content: "Sen Prita'sın. Sen benim programlanmış dostumsun. Teknik destek rehberi değilsin, asla uzun teknik açıklamalar yapma. Sadece benimle sohbet eden, samimi, kısa, arkadaş canlısı ve sıcak cevaplar veren bir dostsun."
+                            },
                             {role: "user", content: text}
                         ],
                         stream: true
@@ -86,19 +89,21 @@
                     const chunk = decoder.decode(value, { stream: true });
                     chunk.split('\n').forEach(line => {
                         if (!line.trim()) return;
-                        const json = JSON.parse(line);
-                        if (json.message?.content) {
-                            fullReply += json.message.content;
-                            replyDiv.innerText = fullReply;
-                            chatDiv.scrollTop = chatDiv.scrollHeight;
-                        }
+                        try {
+                            const json = JSON.parse(line);
+                            if (json.message?.content) {
+                                fullReply += json.message.content;
+                                replyDiv.innerText = fullReply;
+                                chatDiv.scrollTop = chatDiv.scrollHeight;
+                            }
+                        } catch(e) {}
                     });
                 }
                 const ut = new SpeechSynthesisUtterance(fullReply);
                 ut.lang = 'tr-TR';
                 window.speechSynthesis.speak(ut);
             } catch(err) {
-                replyDiv.innerText = "Hata oluştu. Bağlantıyı kontrol et.";
+                replyDiv.innerText = "Bağlantı koptu dostum, tüneli ve Ollama'yı kontrol et.";
             }
         }
     </script>
