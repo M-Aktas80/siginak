@@ -4,13 +4,16 @@
     <meta charset="UTF-8">
     <title>Prita - Sığınak</title>
     <style>
-        body { background-color: #0f172a; color: #f8fafc; font-family: 'Segoe UI', sans-serif; display: flex; flex-direction: column; height: 100vh; margin: 0; }
-        .prita-badge { text-align: center; padding: 15px; background: #1e293b; border-bottom: 2px solid #38bdf8; color: #38bdf8; font-weight: bold; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
+        body { background-color: #0f172a; color: #f8fafc; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+        .prita-badge { text-align: center; padding: 15px; background: #1e293b; border-bottom: 2px solid #38bdf8; font-size: 1.5rem; font-weight: bold; color: #38bdf8; letter-spacing: 1px; }
         .chat-messages { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; }
         .message { max-width: 80%; padding: 12px 16px; border-radius: 12px; }
         .user-message { background-color: #38bdf8; color: #0f172a; align-self: flex-end; }
         .prita-message { background-color: #1e293b; border: 1px solid #334155; align-self: flex-start; }
         .chat-input-area { padding: 20px; background-color: #1e293b; display: flex; gap: 10px; border-top: 1px solid #334155; }
+        #voiceBtn { padding: 12px 20px; background-color: #ef4444; border: none; border-radius: 8px; color: white; cursor: pointer; font-weight: bold; }
+        #voiceBtn.active { background-color: #22c55e; }
         #userInput { flex-grow: 1; padding: 12px; border-radius: 8px; border: 1px solid #334155; background: #0f172a; color: white; }
     </style>
 </head>
@@ -19,27 +22,43 @@
     <div class="prita-badge">PRITA</div>
     <div class="chat-messages" id="chatMessages"></div>
     <div class="chat-input-area">
-        <input type="text" id="userInput" placeholder="Bir şeyler yaz..." onkeypress="if(event.key==='Enter') mesajGonder()">
+        <button id="voiceBtn" onclick="sesiBaslat()">🎙️ Konuş</button>
+        <input type="text" id="userInput" placeholder="Yaz veya konuş..." onkeypress="if(event.key==='Enter') mesajGonder()">
         <button onclick="mesajGonder()">Gönder</button>
     </div>
 
     <script>
         const SERVER_URL = "https://graduated-passport-prime-buyers.trycloudflare.com/api/chat";
+        const btn = document.getElementById('voiceBtn');
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        const recognition = new SpeechRecognition();
+        recognition.lang = 'tr-TR';
+
+        function sesiBaslat() {
+            btn.innerText = "Dinliyorum...";
+            btn.classList.add('active');
+            recognition.start();
+        }
+
+        recognition.onresult = (event) => {
+            document.getElementById('userInput').value = event.results[0][0].transcript;
+            btn.innerText = "🎙️ Konuş";
+            btn.classList.remove('active');
+            mesajGonder();
+        };
 
         async function mesajGonder() {
             const input = document.getElementById('userInput');
             const text = input.value.trim();
             if(!text) return;
             
-            // Kullanıcı mesajını ekle
             const chatDiv = document.getElementById('chatMessages');
             chatDiv.innerHTML += `<div class="message user-message">${text}</div>`;
             input.value = '';
 
-            // Prita için boş bir cevap alanı oluştur
             const replyDiv = document.createElement('div');
             replyDiv.className = 'message prita-message';
-            replyDiv.innerText = "Prita yazıyor...";
+            replyDiv.innerText = "Prita düşünüyor...";
             chatDiv.appendChild(replyDiv);
 
             try {
@@ -48,7 +67,10 @@
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({
                         model: "tinyllama",
-                        messages: [{role: "user", content: text}],
+                        messages: [
+                            {role: "system", content: "Sen Prita'sın. Sen benim programlanmış dostumsun. Samimi, kısa ve arkadaş canlısı cevaplar ver."},
+                            {role: "user", content: text}
+                        ],
                         stream: true
                     })
                 });
@@ -56,28 +78,27 @@
                 const reader = res.body.getReader();
                 const decoder = new TextDecoder();
                 let fullReply = "";
-
-                replyDiv.innerText = ""; // "Prita yazıyor..." kısmını temizle
+                replyDiv.innerText = "";
 
                 while (true) {
                     const { done, value } = await reader.read();
                     if (done) break;
-                    
                     const chunk = decoder.decode(value, { stream: true });
-                    const lines = chunk.split('\n');
-                    
-                    for (const line of lines) {
-                        if (!line.trim()) continue;
+                    chunk.split('\n').forEach(line => {
+                        if (!line.trim()) return;
                         const json = JSON.parse(line);
-                        if (json.message && json.message.content) {
+                        if (json.message?.content) {
                             fullReply += json.message.content;
-                            replyDiv.innerText = fullReply; // Kelime kelime ekrana bas
-                            chatDiv.scrollTop = chatDiv.scrollHeight; // En aşağı kaydır
+                            replyDiv.innerText = fullReply;
+                            chatDiv.scrollTop = chatDiv.scrollHeight;
                         }
-                    }
+                    });
                 }
+                const ut = new SpeechSynthesisUtterance(fullReply);
+                ut.lang = 'tr-TR';
+                window.speechSynthesis.speak(ut);
             } catch(err) {
-                replyDiv.innerText = "Hata oluştu: " + err.message;
+                replyDiv.innerText = "Hata oluştu. Bağlantıyı kontrol et.";
             }
         }
     </script>
