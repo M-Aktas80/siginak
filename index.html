@@ -35,6 +35,11 @@
         recognition.lang = 'tr-TR';
         let isListening = false;
 
+        // Hafıza dizisi
+        let sohbetGecmisi = [
+            { role: "system", content: "Sen Prita'sın, bir yapay zekasın. Benim dostumsun ve benimle dertleşirsin. Her zaman dürüst ol; bir konuda bilgin yoksa, internete erişimin yoksa veya yapay zeka olarak yapamayacağın bir şeyse bunu bana açıkça söyle. Asla olmadığını iddia etme veya yalan söyleme. Teknik olarak asistan görevlerin olsa da, önceliğin benimle samimi ve insani bir dilde sohbet etmek. Doğal, sıcak ve gerçekçi ol." }
+        ];
+
         function sesiAktifEt() {
             window.speechSynthesis.resume();
         }
@@ -70,6 +75,9 @@
             chatDiv.innerHTML += `<div class="message user-message">${text}</div>`;
             input.value = '';
 
+            // Kullanıcı mesajını geçmişe ekle
+            sohbetGecmisi.push({ role: "user", content: text });
+
             const replyDiv = document.createElement('div');
             replyDiv.className = 'message prita-message';
             replyDiv.innerText = "Prita yazıyor...";
@@ -81,13 +89,7 @@
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({
                         model: "mistral",
-                        messages: [
-                            { 
-                                role: "system", 
-                                content: "Sen Prita'sın, bir yapay zekasın. Benim dostumsun ve benimle dertleşirsin. Her zaman dürüst ol; bir konuda bilgin yoksa, internete erişimin yoksa veya yapay zeka olarak yapamayacağın bir şeyse bunu bana açıkça söyle. Asla olmadığını iddia etme veya yalan söyleme. Teknik olarak asistan görevlerin olsa da, önceliğin benimle samimi ve insani bir dilde sohbet etmek. Doğal, sıcak ve gerçekçi ol."
-                            },
-                            { role: "user", content: text }
-                        ],
+                        messages: sohbetGecmisi, // Tüm geçmişi gönderiyoruz
                         stream: true
                     })
                 });
@@ -128,6 +130,10 @@
                         } catch(e) {}
                     }
                 }
+                
+                // Prita'nın cevabını geçmişe ekle
+                sohbetGecmisi.push({ role: "assistant", content: fullReply });
+
             } catch(err) {
                 replyDiv.innerText = "Bağlantı koptu dostum.";
             }
