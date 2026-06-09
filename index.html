@@ -28,7 +28,6 @@
     </div>
 
     <script>
-        // Güncel tünel adresi yerleştirildi
         const SERVER_URL = "https://graduated-passport-prime-buyers.trycloudflare.com/api/chat";
         
         const btn = document.getElementById('voiceBtn');
@@ -70,7 +69,7 @@
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({
-                        model: "llama3",
+                        model: "phi4", // DÜZELTİLDİ: llama3 yerine phi4 yazıldı
                         messages: [{role: "user", content: text}],
                         stream: false
                     })
