@@ -92,6 +92,7 @@
                 const reader = res.body.getReader();
                 const decoder = new TextDecoder();
                 let fullReply = "";
+                let cumleBuffer = ""; // Cümle takibi için
                 replyDiv.innerText = "";
 
                 while (true) {
@@ -104,21 +105,24 @@
                         try {
                             const json = JSON.parse(line);
                             if (json.message?.content) {
-                                fullReply += json.message.content;
+                                const content = json.message.content;
+                                fullReply += content;
+                                cumleBuffer += content;
                                 replyDiv.innerText = fullReply;
                                 chatDiv.scrollTop = chatDiv.scrollHeight;
+
+                                // Eğer cümle biterse anında seslendir
+                                if (/[.!?]/.test(content)) {
+                                    const temizMetin = cumleBuffer.replace(/[^a-zA-ZçÇğĞıİöÖşŞüÜ0-9.,!? ]/g, ' ');
+                                    const ut = new SpeechSynthesisUtterance(temizMetin);
+                                    ut.lang = 'tr-TR';
+                                    window.speechSynthesis.speak(ut);
+                                    cumleBuffer = ""; // Buffer'ı temizle
+                                }
                             }
                         } catch(e) {}
                     }
                 }
-                
-                // Metni temizle ve seslendir (Mistral'in garip karakterlerini siler)
-                const temizMetin = fullReply.replace(/[^a-zA-ZçÇğĞıİöÖşŞüÜ0-9.,!? ]/g, ' ');
-                const ut = new SpeechSynthesisUtterance(temizMetin);
-                ut.lang = 'tr-TR';
-                ut.rate = 1.0;
-                window.speechSynthesis.speak(ut);
-
             } catch(err) {
                 replyDiv.innerText = "Bağlantı koptu dostum.";
             }
