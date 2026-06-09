@@ -28,8 +28,8 @@
     </div>
 
     <script>
-        // BURAYI terminaldeki yeni linkinle güncelle!
-        const SERVER_URL = "https://permalink-allowed-broad-agreements.trycloudflare.com/api/chat";
+        // Güncel tünel adresi yerleştirildi
+        const SERVER_URL = "https://tyler-grand-delicious-north.trycloudflare.com/api/chat";
         
         const btn = document.getElementById('voiceBtn');
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -70,7 +70,7 @@
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({
-                        model: "llama3", // Ollama model adın buraya yazılmalı
+                        model: "llama3",
                         messages: [{role: "user", content: text}],
                         stream: false
                     })
@@ -89,6 +89,7 @@
                 window.speechSynthesis.speak(ut);
             } catch(err) {
                 statusDiv.innerText = "Sunucuya ulaşılamadı. Ollama'yı ve tüneli kontrol et.";
+                console.error(err);
             }
         }
     </script>
